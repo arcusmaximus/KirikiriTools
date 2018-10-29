@@ -2,7 +2,7 @@
 Tools for the Kirikiri visual novel engine.
 
 ## KirikiriDescrambler
-Some Kirikiri games have their plaintext scripts (.ks/.tjs) scrambled or compressed. The scrambling can be recognized by the signature "FE FE XX FF FE" at the beginning of the file, where XX is 00, 01 or 02. KirikiriDescrambler turns these files into regular UTF-8 text files which can be placed back right in the game (i.e. no rescrambling needed).
+Some Kirikiri games have their plaintext scripts (.ks/.tjs) scrambled or compressed. Such files can be recognized by the signature "FE FE XX FF FE" at the start, XX being 00, 01 or 02. KirikiriDescrambler turns them into regular text files which can be placed right back in the game - no rescrambling needed.
 
 ## KirikiriUnencryptedArchive
 A Kirikiri plugin (.tpm) which makes games accept unencrypted .xp3 archives. By using this plugin, it's no longer necessary to identify and replicate the encryption for each game you work on; just create an unencrypted archive with the Xp3Pack tool (included in this repository), throw the .tpm in the game's "plugin" folder, and you're done.
