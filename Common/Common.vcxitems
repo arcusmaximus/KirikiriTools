@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{bf6dd8ef-c0ab-449c-b58e-a66bf73e300c}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Directory.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)FileStream.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)MemoryUtil.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Path.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Stream.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)StringUtil.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Common.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Directory.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)FileStream.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MemoryUtil.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Path.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Stream.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)StringUtil.h" />
+  </ItemGroup>
+</Project>
