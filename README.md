@@ -10,6 +10,8 @@ A Kirikiri plugin (.tpm) which makes games accept unencrypted .xp3 archives. By 
 ## KirikiriUnencryptedArchiveLauncher
 Kirikiri games with the "CxDec" protection don't load .tpm plugins (they can be recognized by the absence of any .tpm files in the "plugin" folder). Because of this restriction, the KirikiriUnencryptedArchive plugin won't be loaded and unencrypted archives will be ignored. As a workaround, place this launcher .exe in the game's folder and use that rather than starting the game directly. It will find the Kirikiri .exe and launch it with the plugin already in memory.
 
+For Steam games, make sure to uncomment the two SetEnvironmentVariable() calls in main.cpp and fill in the AppId (the number in the game's Steam store URL).
+
 ## Xp3Pack
 Creates unencrypted .xp3 archives for use with the KirikiriUnencryptedArchive plugin. Unlike other packing tools, it sets all hashes in the file table to zero; this serves as a marker for the plugin to bypass the game's decryption for those files.
 
