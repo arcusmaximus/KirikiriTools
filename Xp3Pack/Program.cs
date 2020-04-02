@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace Arc.Ddsi.Xp3Pack
@@ -7,7 +7,7 @@ namespace Arc.Ddsi.Xp3Pack
     {
         public static void Main(string[] args)
         {
-            if (args.Length != 1)
+            if (args.Length < 1)
             {
                 Console.WriteLine("Usage: Xp3Pack folder");
                 return;
@@ -23,11 +23,13 @@ namespace Arc.Ddsi.Xp3Pack
             string parentFolderPath = Path.GetDirectoryName(folderPath);
             if (parentFolderPath == null)
             {
-                Console.WriteLine("Specified folder does not have a parent folder.");
+                Console.WriteLine("Specified folder does not have a parent folder?!");
                 return;
             }
 
-            string xp3FilePath = Path.Combine(parentFolderPath, Path.GetFileName(folderPath) + ".xp3");
+            string fileName = Path.GetFileName(folderPath) + ".xp3";
+            Console.WriteLine("Creating " + fileName);
+            string xp3FilePath = Path.Combine(parentFolderPath, fileName);
             Xp3ArchiveWriter.Write(folderPath, xp3FilePath);
         }
     }

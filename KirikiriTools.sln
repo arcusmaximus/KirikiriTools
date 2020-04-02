@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common", "Common\Common.vcx
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KirikiriDescrambler", "KirikiriDescrambler\KirikiriDescrambler.csproj", "{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextUTF16y", "TextUTF16y\TextUTF16y.csproj", "{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0E}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Common\Common.vcxitems*{68fd9bd1-b4e9-4c34-bbb4-45ed49ee6315}*SharedItemsImports = 4
@@ -46,6 +48,10 @@ Global
 		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

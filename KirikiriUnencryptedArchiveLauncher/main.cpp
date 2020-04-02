@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#define _CRT_SECURE_NO_WARNINGS
+#include <shellapi.h>
 
 using namespace std;
 
@@ -44,7 +46,19 @@ wstring GetKirikiriExePath()
 
 int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, wchar_t* pszCmdLine, int cmdShow)
 {
-    wstring exePath = GetKirikiriExePath();
+    int numArgs;
+    wstring exePath;
+    PWSTR *ppszArgs = CommandLineToArgvW(pszCmdLine, &numArgs);
+
+    if (numArgs == 1)
+    {
+        exePath = ppszArgs[0];
+    } 
+    else
+    {
+        exePath = GetKirikiriExePath();
+    }
+
     if (exePath.empty())
     {
         MessageBox(nullptr, L"No Kirikiri .exe found.", L"", MB_ICONEXCLAMATION);
@@ -77,5 +91,10 @@ int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, wchar_t* ps
     );
     CloseHandle(procInfo.hProcess);
     CloseHandle(procInfo.hThread);
+    if (ppszArgs)
+    {
+        LocalFree(ppszArgs);
+    }
+
     return 0;
 }
