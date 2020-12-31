@@ -1,13 +1,13 @@
 #pragma once
 
-enum class BreakpointMode
+enum class HWBreakpointMode
 {
     Execute   = 0b00,
     Write     = 0b01,
     ReadWrite = 0b11
 };
 
-enum class BreakpointSize
+enum class HWBreakpointSize
 {
     Byte    = 0b00,
     Word    = 0b01,
@@ -18,31 +18,68 @@ enum class BreakpointSize
 class Debugger
 {
 public:
-    
+    static void             AddMemoryBreakpoint             (void* address, int size);
+	static void             RemoveMemoryBreakpoint          (void* address);
+	static void             ClearMemoryBreakpoints          ();
+	static void             SetMemoryBreakpointHandler      (const std::function<void (CONTEXT*)>& handler);
 
-    static void             AddBreakpoint                   (void* ptr, BreakpointSize size, BreakpointMode mode, std::function<void ()> callback);
-    static void             RemoveBreakpoint                (void* ptr);
+    static void             AddHardwareBreakpoint           (void* address, HWBreakpointSize size, HWBreakpointMode mode, const std::function<void (CONTEXT*)>& handler);
+    static void             RemoveHardwareBreakpoint        (void* address);
+	static void             ClearHardwareBreakpoints        ();
+
+    static void             Log                             (const wchar_t* pMessage, ...);
 
 private:
-    struct Breakpoint
+    class MemoryBreakpoint
     {
-        void* Address;
-        std::function<void()> Callback;
+    public:
+								MemoryBreakpoint                (void* address, int size);
+								~MemoryBreakpoint               ();
 
-        void                    Set                             (void* ptr, BreakpointSize size, BreakpointMode mode, std::function<void()> callback);
-        void                    Clear                           ();
+    	void*                   GetAddress                      () const { return _address; }
+    	int                     GetSize                         () const { return _size; }
+    	
+		void                    Reapply                         () const;
+    	
+    private:
+        void* _address;
+        int _size;
+    };
+	
+    class HardwareBreakpoint
+    {
+    public:
+    							HardwareBreakpoint              (int index, void* address, HWBreakpointSize size, HWBreakpointMode mode, const std::function<void(CONTEXT*)>& handler);
+                                ~HardwareBreakpoint             ();
+
+		int                     GetIndex                        () const { return _index; }
+    	void*                   GetAddress                      () const { return _address; }
+    	const std::function<void (CONTEXT*)>& GetHandler        () const { return _handler; }
+
+    private:
+        int _index;
+        void* _address;
+        std::function<void (CONTEXT*)> _handler;
     };
 
-    static long __stdcall   HandleException                 (EXCEPTION_POINTERS* pException);
-    static void __stdcall   ExecuteBreakpointCallbackWrap   ();
-    static void __stdcall   ExecuteBreakpointCallback       ();
+	static void             ApplyMemoryBreakpoints          ();
 
-    static Breakpoint*      FindBreakpoint                  (void* ptr);
-    static int              GetBreakpointIndex              (Breakpoint* pBreakpoint);
-    static int              GetNumActiveBreakpoints         ();
-    static void             CleanBreakpoints                ();
+	static void             EnsureExceptionHandler          ();
+    static void             CleanExceptionHandler           ();
+	
+    static long __stdcall   HandleException                 (EXCEPTION_POINTERS* pException);
+    static bool             HandleMemoryBreakpoint          (CONTEXT* pContext);
+	static bool             HandleHardwareBreakpoint        (CONTEXT* pContext);
+
+	static void             ScheduleBreakpointHandler       (const std::function<void (CONTEXT*)>& handler, CONTEXT* pContext);
+    static void             ExecuteBreakpointHandlerWrap    ();
+    static void             ExecuteBreakpointHandler        ();
 
     static void* ExceptionHandlerHandle;
-    static Breakpoint Breakpoints[4];
-    static Breakpoint* CurrentBreakpoint;
+    static std::vector<MemoryBreakpoint> MemoryBreakpoints;
+    static std::function<void(CONTEXT*)> MemoryBreakpointHandler;
+    static std::vector<HardwareBreakpoint> HardwareBreakpoints;
+
+    static std::function<void(CONTEXT*)> CurrentBreakpointHandler;
+    static CONTEXT CurrentBreakpointContext;
 };

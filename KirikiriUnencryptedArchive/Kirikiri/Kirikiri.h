@@ -38,7 +38,7 @@ typedef tjs_real tTVReal;
 class Kirikiri
 {
 public:
-    static void                     Init                                            (std::function<void()> callback);
+    static void                     Init                                            (const std::function<void()>& callback);
 
     static void                     (__stdcall *TVPExecuteExpression)               (const ttstr& content, tTJSVariant* pResult);
     static int                      (__stdcall *ZLIB_uncompress)                    (byte* pTarget, uint* pTargetLength, const byte* pSource, uint sourceLength);
@@ -46,62 +46,62 @@ public:
     template<typename T>
     static void                     ResolveScriptExport                             (const tjs_char* pszName, T*& pFunction)
     {
-        pFunction = (T*)*TVPExportFuncs->Find(pszName);
+        void** ppFunction = TVPExportTable->Find(pszName);
+        if (ppFunction == nullptr)
+        {
+	        Debugger::Log(L"Failed to resolve %s", pszName);
+            throw std::exception("Failed to resolve function");
+        }
+    	
+        Debugger::Log(L"Successfully resolved %s", pszName);
+        pFunction = (T*)*ppFunction;
     }
 
     template<typename T>
     static void                     ReplaceScriptExport                             (const tjs_char* pszName, T* pNewFunction, T*& pOldFunction)
     {
-        void** ppFunction = TVPExportFuncs->Find(pszName);
+        void** ppFunction = TVPExportTable->Find(pszName);
         if (ppFunction == nullptr)
-            throw "Exported function not found";
-
+        {
+	        Debugger::Log(L"Failed to resolve %s for replacement", pszName);
+	        throw std::exception("Failed to resolve function for replacement");
+        }
+    	
+        Debugger::Log(L"Successfully resolved %s for replacement", pszName);
         pOldFunction = (T*)*ppFunction;
         *ppFunction = GetTrampoline(pNewFunction);
     }
 
-    struct Range
+    struct Section
     {
-        Range()
-        {
-            Start = nullptr;
-            Length = 0;
-        }
-
-        Range(void* pStart, int length)
-        {
-            Start = pStart;
-            Length = length;
-        }
-
+        char    Name[8];
         void*   Start;
-        int     Length;
+        int     Size;
+        DWORD   Characteristics;
     };
 
-    static HMODULE ModuleHandle;
-    static Range TextSection;
-    static Range DataSection;
+    static HMODULE GameModuleHandle;
+    static Section GameTextSection;
+    static std::vector<Section> PossibleGameDataSections;
 
 private:
-    static void                         PostInit                                        ();
+	static void                         FindTextAndDataSections                         ();
+	static std::vector<Section>         GetSections                                     (HMODULE hModule);
 
-    static void*                        FindExportFunctionListEnd                       ();
-    static tTJSHashTable<ttstr, void*>* FindExportHashTable                             ();
+    static void                         SetGameStartupMemoryBreakpoints();
+	static bool                         IsGamePacked                                    ();
+	static void                         HandleMemoryBreakpointForGameStartup            (CONTEXT* pContext);
+	static void                         HandleHwBreakpointForTVPExportTableInit         (CONTEXT* pContext);
+    static void                         FinishInitialization                            ();
+
+    static void*                        FindTVPExportFunctionPointersEnd                ();
+    static tTJSHashTable<ttstr, void*>* FindTVPExportTable                              ();
 
     static void*                        GetTrampoline                                   (void* pTarget);
 
-    struct FindImportContext
-    {
-        void*       pFunction;
-        void**      pImport;
-    };
-    static BOOL __stdcall               MatchWin32Import                                (PVOID pContext, DWORD ordinal, LPCSTR pszName, PVOID* ppFunc);
-
-    static void                         FindSections                                    ();
-    static Range                        FindSection                                     (const char* pName);
-    static std::vector<void*>           GetUnusedWin32Functions                         ();
-
-    static tTJSHashTable<ttstr, void*>* TVPExportFuncs;
+    static std::function<void()> InitializationCallback;
+	
+    static tTJSHashTable<ttstr, void*>* TVPExportTable;
     static byte ExportHashTableData[2048];
     static byte ExportHashTableMask[2048];
 };

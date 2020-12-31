@@ -1,15 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.14
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KirikiriUnencryptedArchive", "KirikiriUnencryptedArchive\KirikiriUnencryptedArchive.vcxproj", "{68FD9BD1-B4E9-4C34-BBB4-45ED49EE6315}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Detours", "Detours\Detours.vcxproj", "{9D3F6C0A-9EC1-420C-AFFE-645A574DD9A0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xp3Pack", "Xp3Pack\Xp3Pack.csproj", "{45DCBC40-F6EB-46CF-9D07-C8FFC57728F7}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KirikiriUnencryptedArchiveLauncher", "KirikiriUnencryptedArchiveLauncher\KirikiriUnencryptedArchiveLauncher.vcxproj", "{ACF5585D-BA54-40C9-9B22-2BB73023BE96}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common", "Common\Common.vcxitems", "{BF6DD8EF-C0AB-449C-B58E-A66BF73E300C}"
 EndProject
@@ -18,7 +16,6 @@ EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Common\Common.vcxitems*{68fd9bd1-b4e9-4c34-bbb4-45ed49ee6315}*SharedItemsImports = 4
-		Common\Common.vcxitems*{acf5585d-ba54-40c9-9b22-2bb73023be96}*SharedItemsImports = 4
 		Common\Common.vcxitems*{bf6dd8ef-c0ab-449c-b58e-a66bf73e300c}*SharedItemsImports = 9
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,10 +35,6 @@ Global
 		{45DCBC40-F6EB-46CF-9D07-C8FFC57728F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45DCBC40-F6EB-46CF-9D07-C8FFC57728F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45DCBC40-F6EB-46CF-9D07-C8FFC57728F7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ACF5585D-BA54-40C9-9B22-2BB73023BE96}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{ACF5585D-BA54-40C9-9B22-2BB73023BE96}.Debug|Any CPU.Build.0 = Debug|Win32
-		{ACF5585D-BA54-40C9-9B22-2BB73023BE96}.Release|Any CPU.ActiveCfg = Release|Win32
-		{ACF5585D-BA54-40C9-9B22-2BB73023BE96}.Release|Any CPU.Build.0 = Release|Win32
 		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FAEAFEB2-29FF-4229-8E84-9C6FA7422F0F}.Release|Any CPU.ActiveCfg = Release|Any CPU

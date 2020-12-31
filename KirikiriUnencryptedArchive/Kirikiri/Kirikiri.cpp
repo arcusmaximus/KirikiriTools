@@ -5,172 +5,200 @@ using namespace std;
 void    (__stdcall *Kirikiri::TVPExecuteExpression)     (const ttstr& content, tTJSVariant* pResult);
 int     (__stdcall *Kirikiri::ZLIB_uncompress)          (byte* pTarget, uint* pTargetLength, const byte* pSource, uint sourceLength);
 
-HMODULE Kirikiri::ModuleHandle;
-Kirikiri::Range Kirikiri::TextSection;
-Kirikiri::Range Kirikiri::DataSection;
+HMODULE Kirikiri::GameModuleHandle;
+Kirikiri::Section Kirikiri::GameTextSection;
+vector<Kirikiri::Section> Kirikiri::PossibleGameDataSections;
 
-void Kirikiri::Init(function<void()> callback)
+function<void()> Kirikiri::InitializationCallback;
+
+void Kirikiri::Init(const function<void()>& callback)
 {
-    ModuleHandle = GetModuleHandle(NULL);
-    FindSections();
-    TVPExportFuncs = FindExportHashTable();
-    if (TVPExportFuncs == nullptr)
-    {
-        void* pFuncListEnd = FindExportFunctionListEnd();
-        if (pFuncListEnd == nullptr)
-            throw "Couldn't find export function list";
+    GameModuleHandle = GetModuleHandle(nullptr);
+    FindTextAndDataSections();
+    InitializationCallback = callback;
 
-        void* ptr = (void **)pFuncListEnd - 0x10;
-        Debugger::AddBreakpoint(
-            ptr,
-            BreakpointSize::Dword,
-            BreakpointMode::ReadWrite,
-            [=]()
-            {
-                Debugger::RemoveBreakpoint(ptr);
-                TVPExportFuncs = FindExportHashTable();
-                PostInit();
-                callback();
-            }
-        );
-    }
-    else
+    SetGameStartupMemoryBreakpoints();
+}
+
+void Kirikiri::FindTextAndDataSections()
+{
+    if (GameTextSection.Start != nullptr)
+        return;
+
+    vector<Section> sections = GetSections(GameModuleHandle);
+    GameTextSection = sections[0];
+    for (int i = 1; i < sections.size(); i++)
     {
-        PostInit();
-        callback();
+        if (memcmp(sections[i].Name, ".rsrc\0\0\0", 8) == 0)
+            break;
+    	
+        if (sections[i].Size > 0xA0000 && (sections[i].Characteristics & IMAGE_SCN_MEM_WRITE) != 0)
+            PossibleGameDataSections.push_back(sections[i]);
     }
 }
 
-void Kirikiri::PostInit()
+vector<Kirikiri::Section> Kirikiri::GetSections(HMODULE hModule)
 {
+    IMAGE_DOS_HEADER* pDosHeader = (IMAGE_DOS_HEADER*)hModule;
+    IMAGE_NT_HEADERS* pNtHeaders = (IMAGE_NT_HEADERS*)((byte*)GameModuleHandle + pDosHeader->e_lfanew);
+    IMAGE_SECTION_HEADER* pSectionHeaders = IMAGE_FIRST_SECTION(pNtHeaders);
+
+    vector<Section> sections;
+    for (int i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++)
+    {
+        Section section;
+        memcpy(section.Name, pSectionHeaders[i].Name, 8);
+        section.Start = (byte*)GameModuleHandle + pSectionHeaders[i].VirtualAddress;
+        section.Size = pSectionHeaders[i].Misc.VirtualSize;
+        section.Characteristics = pSectionHeaders[i].Characteristics;
+        sections.push_back(section);
+    }
+    return sections;
+}
+
+void Kirikiri::SetGameStartupMemoryBreakpoints()
+{
+    if (IsGamePacked())
+    {
+    	// We assume the packer first decrypts the .text section from start to end,
+    	// and then the .data section from start to end. In other words, if we catch an
+    	// access to the last page of the .data section, we assume the game is (almost)
+    	// completely decrypted.
+        for (const Section& section : PossibleGameDataSections)
+        {
+            Debugger::AddMemoryBreakpoint((byte*)section.Start + section.Size - 0x1000, 0x1000);
+        }
+    }
+    else
+    {
+    	// Otherwise we just wait for execution to enter the .text section. (Technically
+    	// we should be able to set our HW breakpoint on the function pointer list
+    	// right away, but in practice this doesn't work anymore on Win10 for some reason)
+        Debugger::AddMemoryBreakpoint(GameTextSection.Start, GameTextSection.Size);
+    }
+    Debugger::SetMemoryBreakpointHandler(HandleMemoryBreakpointForGameStartup);
+}
+
+bool Kirikiri::IsGamePacked()
+{
+    return DetourGetEntryPoint(GameModuleHandle) >= (byte*)GameTextSection.Start + GameTextSection.Size;
+}
+
+void Kirikiri::HandleMemoryBreakpointForGameStartup(CONTEXT* pContext)
+{
+	// Ignore reads from Windows libraries
+    if (pContext->Eip < (DWORD)GameModuleHandle || pContext->Eip >= (DWORD)GameModuleHandle + DetourGetModuleSize(GameModuleHandle))
+        return;
+
+    Debugger::ClearMemoryBreakpoints();
+    void* pFuncListEnd = FindTVPExportFunctionPointersEnd();
+    if (pFuncListEnd == nullptr)
+    {
+        SetGameStartupMemoryBreakpoints();
+        return;
+    }
+
+	// Once we've established that the list of TVP function pointers is available in the .data section,
+	// place a (more precise) HW breakpoint near its end to catch the Kirikiri function that reads this
+	// list and populates the (exported function name -> function pointer) hashtable.
+    void* pNearFuncListEnd = (void**)pFuncListEnd - 0x10;
+    Debugger::AddHardwareBreakpoint(pNearFuncListEnd, HWBreakpointSize::Dword, HWBreakpointMode::ReadWrite, HandleHwBreakpointForTVPExportTableInit);
+}
+
+void Kirikiri::HandleHwBreakpointForTVPExportTableInit(CONTEXT* pContext)
+{
+	// Ignore reads and writes from the packer
+    if (pContext->Eip < (DWORD)GameTextSection.Start || pContext->Eip >= (DWORD)GameTextSection.Start + GameTextSection.Size)
+        return;
+
+	// The original Kirikiri code is as good as done populating the hashtable of exported functions.
+	// We can now go ahead with finding the table, querying it, and patching it!
+    Debugger::ClearHardwareBreakpoints();
+    FinishInitialization();
+}
+
+void Kirikiri::FinishInitialization()
+{
+    TVPExportTable = FindTVPExportTable();
+    if (TVPExportTable == nullptr)
+        throw exception("Initialization failed");
+
+    Debugger::Log(L"Found TVP export table at %08X", TVPExportTable);
+	
     ResolveScriptExport(L"void ::TVPExecuteExpression(const ttstr &,tTJSVariant *)", TVPExecuteExpression);
     ResolveScriptExport(L"int ::ZLIB_uncompress(unsigned char *,unsigned long *,const unsigned char *,unsigned long)", ZLIB_uncompress);
     tTJSString::Init();
     tTJSVariant::Init();
+	
+    InitializationCallback();
+    InitializationCallback = nullptr;
 }
 
-void* Kirikiri::FindExportFunctionListEnd()
+void* Kirikiri::FindTVPExportFunctionPointersEnd()
 {
-    int numConsecutiveFunctionPointers = 0;
-    void* pCodeStart = TextSection.Start;
-    void* pCodeEnd = (byte*)TextSection.Start + TextSection.Length;
-    void** ppFunc = (void**)DataSection.Start;
-    void** pDataEnd = (void**)((byte*)DataSection.Start + DataSection.Length);
-    for (; ppFunc < pDataEnd; ppFunc++)
+    void* pCodeStart = GameTextSection.Start;
+    void* pCodeEnd = (byte*)GameTextSection.Start + GameTextSection.Size;
+	
+    for (auto it = PossibleGameDataSections.begin(); it != PossibleGameDataSections.end(); ++it)
     {
-        void* pFunc = *ppFunc;
-        if (pFunc < pCodeStart || pFunc >= pCodeEnd)
+        const Section& section = *it;
+    	
+        int numConsecutiveFunctionPointers = 0;
+        
+        void** pSectionEnd = (void**)((byte*)section.Start + section.Size);
+        for (void** ppFunc = (void**)section.Start; ppFunc < pSectionEnd; ppFunc++)
         {
-            if (numConsecutiveFunctionPointers > 500)
+            void* pFunc = *ppFunc;
+            if (pFunc >= pCodeStart && pFunc < pCodeEnd)
+            {
+                numConsecutiveFunctionPointers++;
+                continue;
+            }
+
+            if (numConsecutiveFunctionPointers > 600 && numConsecutiveFunctionPointers < 700)
                 return ppFunc;
 
             numConsecutiveFunctionPointers = 0;
-            continue;
         }
-        numConsecutiveFunctionPointers++;
     }
     return nullptr;
 }
 
-tTJSHashTable<ttstr, void*>* Kirikiri::FindExportHashTable()
+tTJSHashTable<ttstr, void*>* Kirikiri::FindTVPExportTable()
 {
-    return (tTJSHashTable<ttstr, void*>*)MemoryUtil::FindData(DataSection.Start, DataSection.Length, ExportHashTableData, ExportHashTableMask, sizeof(ExportHashTableData));
+    for (const Section& dataSection : PossibleGameDataSections)
+    {
+        void* pTable = MemoryUtil::FindData(dataSection.Start, dataSection.Size, ExportHashTableData, ExportHashTableMask, sizeof(ExportHashTableData));
+        if (pTable != nullptr)
+            return (tTJSHashTable<ttstr, void*>*)pTable;
+    }
+    return nullptr;
 }
 
 void* Kirikiri::GetTrampoline(void* pTarget)
 {
-    static vector<void*> unusedWin32Functions = GetUnusedWin32Functions();
-    if (unusedWin32Functions.empty())
-        throw exception("Can't produce any more trampolines - no more unused Win32 functions available");
+    // Certain Kirikiri builds really don't like it if you patch their export table with
+	// a function pointer that's not inside their .text section. The solution is easy:
+	// write a jmp instruction at the end of the .text section (to make sure we're not
+	// clobbering any existing code) and place the address of that jmp in the export
+	// table instead.
+	
+    static byte* pPrevJump = (byte*)GameTextSection.Start + GameTextSection.Size;
 
-    void* pUnusedWin32Function = unusedWin32Functions.back();
-    unusedWin32Functions.pop_back();
+    byte* pJump = pPrevJump - 5;
+    pPrevJump = pJump;
+	
+    DWORD protection;
+    VirtualProtect(pJump, 5, PAGE_READWRITE, &protection);
+	
+    *pJump = 0xE9;
+    *(int*)(pJump + 1) = (byte*)pTarget - (pJump + 5);
 
-    FindImportContext findContext;
-    findContext.pFunction = pUnusedWin32Function;
-    findContext.pImport = nullptr;
-    DetourEnumerateImportsEx(ModuleHandle, &findContext, nullptr, MatchWin32Import);
-
-    void* pWin32Import = findContext.pImport;
-    if (pWin32Import == nullptr)
-        throw exception("Can't produce trampoline - no unused Win32 import entry found to replace");
-
-    unsigned char instr[] = { 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00 };
-    *(void **)&instr[2] = pWin32Import;
-    void* pJmp = MemoryUtil::FindData(TextSection.Start, TextSection.Length, instr, sizeof(instr));
-    if (pJmp != nullptr)
-    {
-        MemoryUtil::WritePointer((void **)pWin32Import, pTarget);
-        return pJmp;
-    }
-
-    instr[1] = 0x15;
-    void* pCall = MemoryUtil::FindData(TextSection.Start, TextSection.Length, instr, sizeof(instr));
-    if (pCall != nullptr)
-    {
-        void* pAdapter = CodeBuffer::GetCallToJmpAdapter(pTarget);
-        MemoryUtil::WritePointer((void **)pWin32Import, pAdapter);
-        return pCall;
-    }
-    throw exception("Can't produce trampoline - no jmp or call to unused Win32 import entry found");
+    VirtualProtect(pJump, 5, protection, &protection);
+    return pJump;
 }
 
-BOOL Kirikiri::MatchWin32Import(PVOID pContext, DWORD ordinal, LPCSTR pszName, PVOID* ppFunc)
-{
-    if (ppFunc == nullptr)
-        return true;
-
-    FindImportContext* pFindContext = (FindImportContext *)pContext;
-    if (*ppFunc == pFindContext->pFunction)
-    {
-        pFindContext->pImport = ppFunc;
-        return false;
-    }
-    return true;
-}
-
-void Kirikiri::FindSections()
-{
-    if (TextSection.Start != nullptr)
-        return;
-
-    TextSection = FindSection(".text\0\0\0");
-    DataSection = FindSection(".data\0\0\0");
-}
-
-Kirikiri::Range Kirikiri::FindSection(const char* pName)
-{
-    IMAGE_DOS_HEADER* pDosHeader = (IMAGE_DOS_HEADER*)ModuleHandle;
-    IMAGE_NT_HEADERS* pNtHeaders = (IMAGE_NT_HEADERS*)((byte*)ModuleHandle + pDosHeader->e_lfanew);
-    IMAGE_SECTION_HEADER* pSectionHeaders = IMAGE_FIRST_SECTION(pNtHeaders);
-    IMAGE_SECTION_HEADER* pSectionHeader = nullptr;
-    for (int i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++)
-    {
-        if (memcmp(pSectionHeaders[i].Name, pName, 8) == 0)
-        {
-            pSectionHeader = &pSectionHeaders[i];
-            break;
-        }
-    }
-    if (pSectionHeader == nullptr)
-        throw "Section not found";
-
-    return Range((char *)ModuleHandle + pSectionHeader->VirtualAddress, pSectionHeader->Misc.VirtualSize);
-}
-
-vector<void*> Kirikiri::GetUnusedWin32Functions()
-{
-    HMODULE hKernel32 = GetModuleHandle(L"kernel32");
-    return vector<void*>
-           {
-               GetProcAddress(hKernel32, "TlsAlloc"),
-               GetProcAddress(hKernel32, "TlsFree"),
-               GetProcAddress(hKernel32, "TlsGetValue"),
-               GetProcAddress(hKernel32, "TlsSetValue")
-           };
-}
-
-tTJSHashTable<ttstr, void*>* Kirikiri::TVPExportFuncs;
+tTJSHashTable<ttstr, void*>* Kirikiri::TVPExportTable;
 
 byte Kirikiri::ExportHashTableData[] =
 {

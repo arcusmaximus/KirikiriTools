@@ -18,9 +18,9 @@ tTJSVariantString tTJSString::PreInitVariantString;
 
 void tTJSString::Init()
 {
+    Kirikiri::ResolveScriptExport(L"tTJSString::~ tTJSString()", _Dtor);
     Kirikiri::ResolveScriptExport(L"tTJSString::tTJSString(const tTJSString &)", _CtorStr);
     Kirikiri::ResolveScriptExport(L"tTJSString::tTJSString(const tjs_char *)", _CtorPsz);
-    Kirikiri::ResolveScriptExport(L"tTJSString::~ tTJSString()", _Dtor);
     Kirikiri::ResolveScriptExport(L"tTJSString & tTJSString::operator =(const tTJSString &)", _AssignStr);
     Kirikiri::ResolveScriptExport(L"tTJSString & tTJSString::operator =(const tjs_char *)", _AssignPsz);
     Kirikiri::ResolveScriptExport(L"void tTJSString::operator +=(const tTJSString &)", _PlusAssignStr);

@@ -14,19 +14,19 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{68FD9BD1-B4E9-4C34-BBB4-45ED49EE6315}</ProjectGuid>
     <RootNamespace>KirikiriUnencryptedArchive</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -44,12 +44,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetName>1$(ProjectName)</TargetName>
-    <TargetExt>.tpm</TargetExt>
+    <TargetName>version</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>1$(ProjectName)</TargetName>
-    <TargetExt>.tpm</TargetExt>
+    <TargetName>version</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -89,13 +87,13 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CodeBuffer.cpp" />
+    <ClCompile Include="Patcher.cpp" />
+    <ClCompile Include="Proxy.cpp" />
     <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="Kirikiri\Kirikiri.cpp" />
     <ClCompile Include="Kirikiri\tTJSString.cpp" />
     <ClCompile Include="Kirikiri\tTJSVariant.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="PluginPatcher.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -103,7 +101,8 @@
     <ClCompile Include="CxdecHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CodeBuffer.h" />
+    <ClInclude Include="Patcher.h" />
+    <ClInclude Include="Proxy.h" />
     <ClInclude Include="Debugger.h" />
     <ClInclude Include="Kirikiri\Kirikiri.h" />
     <ClInclude Include="Kirikiri\iTJSDispatch2.h" />
@@ -116,7 +115,6 @@
     <ClInclude Include="Kirikiri\tTJSVariantOctet.h" />
     <ClInclude Include="Kirikiri\tTJSVariantString.h" />
     <ClInclude Include="Kirikiri\tTVPXP3ExtractionFilterInfo.h" />
-    <ClInclude Include="PluginPatcher.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="CxdecHelper.h" />
   </ItemGroup>
