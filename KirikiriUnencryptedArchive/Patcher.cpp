@@ -66,9 +66,14 @@ void Patcher::CustomTVPAddAutoPath(const ttstr& url)
 
     ttstr filePath = CxdecHelper::CxdecUrlToXp3FilePath(url);
     if (CxdecHelper::IsCxdecArchive(filePath))
+    {
         OriginalTVPAddAutoPath(url);
+    }
     else
+    {
+        Debugger::Log(L"CustomTVPAddAutoPath(): Changing Cxdec URL %s to %s", url.c_str(), filePath.c_str());
         OriginalTVPAddAutoPath(filePath + L">");
+    }
 }
 
 void Patcher::CustomTVPRemoveAutoPath(const ttstr& url)
@@ -81,7 +86,12 @@ void Patcher::CustomTVPRemoveAutoPath(const ttstr& url)
 
     ttstr filePath = CxdecHelper::CxdecUrlToXp3FilePath(url);
     if (CxdecHelper::IsCxdecArchive(filePath))
+    {
         OriginalTVPRemoveAutoPath(url);
+    }
     else
+    {
+        Debugger::Log(L"CustomTVPRemoveAutoPath(): Changing Cxdec URL %s to %s", url.c_str(), filePath.c_str());
         OriginalTVPRemoveAutoPath(filePath + L">");
+    }
 }
