@@ -1,5 +1,5 @@
 # KirikiriTools
-Tools for the Kirikiri visual novel engine.
+Tools for the Kirikiri visual novel engine. [Download page](https://github.com/arcusmaximus/KirikiriTools/releases)
 
 ## KirikiriDescrambler
 Some Kirikiri games have their plaintext scripts (.ks/.tjs) scrambled or compressed. Such files can be recognized by the signature "FE FE XX FF FE" at the start, XX being 00, 01 or 02. KirikiriDescrambler turns them into regular text files which can be placed right back in the game - no rescrambling needed.
