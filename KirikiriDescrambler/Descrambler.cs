@@ -20,12 +20,12 @@ namespace Arc.Ddsi.KirikiriDescrambler
             BinaryReader reader = new BinaryReader(stream);
             byte[] magic = reader.ReadBytes(2);
             if (magic[0] != 0xFE || magic[1] != 0xFE)
-                throw new InvalidDataException("Not a scrambled Kirikiri file.");
+                return null;
 
             byte mode = reader.ReadByte();
             byte[] bom = reader.ReadBytes(2);
             if (bom[0] != 0xFF || bom[1] != 0xFE)
-                throw new InvalidDataException("Not a scrambled Kirikiri file.");
+                return null;
 
             byte[] utf16;
             switch (mode)

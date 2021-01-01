@@ -66,7 +66,7 @@ void Kirikiri::SetGameStartupMemoryBreakpoints()
     	// completely decrypted.
         for (const Section& section : PossibleGameDataSections)
         {
-            Debugger::AddMemoryBreakpoint((byte*)section.Start + section.Size - 0x1000, 0x1000);
+            Debugger::AddMemoryBreakpoint((byte*)section.Start + ((section.Size - 1) & ~0xFFF), 0x1000);
         }
     }
     else

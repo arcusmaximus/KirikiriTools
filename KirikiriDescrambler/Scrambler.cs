@@ -6,7 +6,7 @@ namespace Arc.Ddsi.KirikiriDescrambler
 {
     internal static class Scrambler
     {
-        public static MemoryStream Scramble(string filePath, byte mode)
+        public static byte[] Scramble(string filePath, byte mode)
         {
             using (Stream stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
             {
@@ -14,7 +14,7 @@ namespace Arc.Ddsi.KirikiriDescrambler
             }
         }
 
-        public static MemoryStream Scramble(Stream stream, byte mode)
+        public static byte[] Scramble(Stream stream, byte mode)
         {
             string text;
             using (StreamReader reader = new StreamReader(stream))
@@ -23,8 +23,8 @@ namespace Arc.Ddsi.KirikiriDescrambler
             }
 
             byte[] utf16 = Encoding.Unicode.GetBytes(text);
-            MemoryStream result = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(result);
+            MemoryStream resultStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(resultStream);
             writer.Write((ushort)0xFEFE);
             writer.Write(mode);
             writer.Write((ushort)0xFEFF);
@@ -46,8 +46,10 @@ namespace Arc.Ddsi.KirikiriDescrambler
                     throw new ArgumentException("Invalid mode");
             }
 
-            result.Position = 0;
-            return result;
+            byte[] resultData = new byte[resultStream.Length];
+            resultStream.Position = 0;
+            resultStream.Read(resultData, 0, resultData.Length);
+            return resultData;
         }
 
         private static void ScrambleMode0(byte[] data, BinaryWriter writer)
