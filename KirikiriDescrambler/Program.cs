@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 
 namespace Arc.Ddsi.KirikiriDescrambler
@@ -10,7 +11,7 @@ namespace Arc.Ddsi.KirikiriDescrambler
         {
             if (args.Length != 1)
             {
-                Console.WriteLine("Usage: TextDescramble <file>");
+                Console.WriteLine($"Usage: {Assembly.GetEntryAssembly().GetName().Name} <file>");
                 return;
             }
 
