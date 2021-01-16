@@ -81,6 +81,7 @@ public:
     static inline std::vector<PE::Section> PossibleGameDataSections{};
 
 private:
+    static bool                         IsKirikiriExe                               ();
 	static void                         FindTextAndDataSections                     ();
 
     static void                         SetGameStartupMemoryBreakpoints             ();

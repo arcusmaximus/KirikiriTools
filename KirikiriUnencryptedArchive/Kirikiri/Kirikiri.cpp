@@ -5,12 +5,48 @@ using namespace std;
 void Kirikiri::Init(const function<void()>& callback)
 {
     InitializationCallback = callback;
-
     GameModuleHandle = GetModuleHandle(nullptr);
     GameModuleSize = DetourGetModuleSize(GameModuleHandle);
+
+    if (!IsKirikiriExe())
+    {
+        Debugger::Log(L"Not a Kirikiri .exe - initialization aborted");
+        return;
+    }
 	
     FindTextAndDataSections();
     SetGameStartupMemoryBreakpoints();
+}
+
+bool Kirikiri::IsKirikiriExe()
+{
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileName(GameModuleHandle, exePath, MAX_PATH);
+
+    DWORD handle;
+    DWORD versionInfoSize = Proxy::OriginalGetFileVersionInfoSizeW(exePath, &handle);
+    if (versionInfoSize == 0)
+        return false;
+
+    vector<byte> versionInfo(versionInfoSize);
+    if (!Proxy::OriginalGetFileVersionInfoW(exePath, 0, versionInfo.size(), versionInfo.data()))
+        return false;
+
+    void* pLanguages;
+    UINT languagesSize;
+    if (!Proxy::OriginalVerQueryValueW(versionInfo.data(), L"\\VarFileInfo\\Translation", &pLanguages, &languagesSize) || languagesSize == 0)
+        return false;
+
+    UINT language = ((USHORT*)pLanguages)[0];
+    UINT codepage = ((USHORT*)pLanguages)[1];
+    wstring subBlockName = StringUtil::Format(L"\\StringFileInfo\\%04x%04x\\LegalCopyright", language, codepage);
+    void* pProductName;
+    UINT productNameSize;
+    if (!Proxy::OriginalVerQueryValueW(versionInfo.data(), subBlockName.c_str(), &pProductName, &productNameSize))
+        return false;
+
+    wstring copyright((wchar_t*)pProductName, productNameSize);
+    return copyright.find(L"KIRIKIRI", 0) != string::npos;
 }
 
 void Kirikiri::FindTextAndDataSections()
