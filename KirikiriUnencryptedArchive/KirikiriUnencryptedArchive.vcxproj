@@ -57,6 +57,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -73,6 +74,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -87,7 +89,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CompilerSpecific\CompilerHelper.cpp" />
+    <ClCompile Include="CustomTVPXP3ArchiveStream.cpp" />
     <ClCompile Include="Patcher.cpp" />
+    <ClCompile Include="PE\PE.cpp" />
     <ClCompile Include="Proxy.cpp" />
     <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="Kirikiri\Kirikiri.cpp" />
@@ -101,7 +106,19 @@
     <ClCompile Include="CxdecHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CompilerSpecific\CallingConvention\BorlandRegToCdeclAdapter.h" />
+    <ClInclude Include="CompilerSpecific\CallingConvention\CdeclToBorlandRegAdapter.h" />
+    <ClInclude Include="CompilerSpecific\CallingConvention\CdeclToThiscallAdapter.h" />
+    <ClInclude Include="CompilerSpecific\CallingConvention\ThiscallToBorlandRegAdapter.h" />
+    <ClInclude Include="CompilerSpecific\CallingConvention\ThiscallToCdeclAdapter.h" />
+    <ClInclude Include="CompilerSpecific\CompilerHelper.h" />
+    <ClInclude Include="CompilerSpecific\CompilerSpecificVector.h" />
+    <ClInclude Include="CustomTVPXP3ArchiveStream.h" />
+    <ClInclude Include="Kirikiri\tTJSBinaryStream.h" />
+    <ClInclude Include="Kirikiri\tTVPArchive.h" />
+    <ClInclude Include="Kirikiri\tTVPXP3Archive.h" />
     <ClInclude Include="Patcher.h" />
+    <ClInclude Include="PE\PE.h" />
     <ClInclude Include="Proxy.h" />
     <ClInclude Include="Debugger.h" />
     <ClInclude Include="Kirikiri\Kirikiri.h" />
@@ -115,6 +132,9 @@
     <ClInclude Include="Kirikiri\tTJSVariantOctet.h" />
     <ClInclude Include="Kirikiri\tTJSVariantString.h" />
     <ClInclude Include="Kirikiri\tTVPXP3ExtractionFilterInfo.h" />
+    <ClInclude Include="CompilerSpecific\Rtti\BorlandTypeDescriptor.h" />
+    <ClInclude Include="CompilerSpecific\Rtti\MsvcRttiCompleteObjectLocator.h" />
+    <ClInclude Include="CompilerSpecific\Enumerations.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="CxdecHelper.h" />
   </ItemGroup>

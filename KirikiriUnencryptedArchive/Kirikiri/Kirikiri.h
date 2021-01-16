@@ -33,6 +33,9 @@ typedef tjs_real tTVReal;
 #include "tTJSHashTable.h"
 #include "iTVPFunctionExporter.h"
 #include "tTVPXP3ExtractionFilterInfo.h"
+#include "tTJSBinaryStream.h"
+#include "tTVPArchive.h"
+#include "tTVPXP3Archive.h"
 #pragma pack(pop)
 
 class Kirikiri
@@ -40,8 +43,8 @@ class Kirikiri
 public:
     static void                     Init                                            (const std::function<void()>& callback);
 
-    static void                     (__stdcall *TVPExecuteExpression)               (const ttstr& content, tTJSVariant* pResult);
-    static int                      (__stdcall *ZLIB_uncompress)                    (byte* pTarget, uint* pTargetLength, const byte* pSource, uint sourceLength);
+    static inline void              (__stdcall *TVPExecuteExpression)               (const ttstr& content, tTJSVariant* pResult){};
+    static inline int               (__stdcall *ZLIB_uncompress)                    (BYTE* pTarget, int* pTargetLength, const BYTE* pSource, int sourceLength){};
 
     template<typename T>
     static void                     ResolveScriptExport                             (const tjs_char* pszName, T*& pFunction)
@@ -53,7 +56,7 @@ public:
             throw std::exception("Failed to resolve function");
         }
     	
-        Debugger::Log(L"Successfully resolved %s", pszName);
+        Debugger::Log(L"Resolved %s", pszName);
         pFunction = (T*)*ppFunction;
     }
 
@@ -67,41 +70,33 @@ public:
 	        throw std::exception("Failed to resolve function for replacement");
         }
     	
-        Debugger::Log(L"Successfully resolved %s for replacement", pszName);
+        Debugger::Log(L"Resolved %s for replacement", pszName);
         pOldFunction = (T*)*ppFunction;
         *ppFunction = GetTrampoline(pNewFunction);
     }
 
-    struct Section
-    {
-        char    Name[8];
-        void*   Start;
-        int     Size;
-        DWORD   Characteristics;
-    };
-
-    static HMODULE GameModuleHandle;
-    static Section GameTextSection;
-    static std::vector<Section> PossibleGameDataSections;
+    static inline HMODULE GameModuleHandle{};
+    static inline int GameModuleSize{};
+    static inline PE::Section GameTextSection{};
+    static inline std::vector<PE::Section> PossibleGameDataSections{};
 
 private:
-	static void                         FindTextAndDataSections                         ();
-	static std::vector<Section>         GetSections                                     (HMODULE hModule);
+	static void                         FindTextAndDataSections                     ();
 
-    static void                         SetGameStartupMemoryBreakpoints();
-	static bool                         IsGamePacked                                    ();
-	static void                         HandleMemoryBreakpointForGameStartup            (CONTEXT* pContext);
-	static void                         HandleHwBreakpointForTVPExportTableInit         (CONTEXT* pContext);
-    static void                         FinishInitialization                            ();
+    static void                         SetGameStartupMemoryBreakpoints             ();
+	static bool                         IsGamePacked                                ();
+	static void                         HandleMemoryBreakpointForGameStartup        (CONTEXT* pContext);
+	static void                         HandleHwBreakpointForTVPExportTableInit     (CONTEXT* pContext);
+    static void                         FinishInitialization                        ();
 
-    static void*                        FindTVPExportFunctionPointersEnd                ();
-    static tTJSHashTable<ttstr, void*>* FindTVPExportTable                              ();
+    static void*                        FindTVPExportFunctionPointersEnd            ();
+    static tTJSHashTable<ttstr, void*>* FindTVPExportTable                          ();
 
-    static void*                        GetTrampoline                                   (void* pTarget);
+    static void*                        GetTrampoline                               (void* pTarget);
 
-    static std::function<void()> InitializationCallback;
+    static inline std::function<void()> InitializationCallback{};
 	
     static tTJSHashTable<ttstr, void*>* TVPExportTable;
-    static byte ExportHashTableData[2048];
-    static byte ExportHashTableMask[2048];
+    static BYTE ExportHashTableData[2048];
+    static BYTE ExportHashTableMask[2048];
 };

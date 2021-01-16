@@ -2,21 +2,14 @@
 
 using namespace std;
 
-void    (__stdcall *Kirikiri::TVPExecuteExpression)     (const ttstr& content, tTJSVariant* pResult);
-int     (__stdcall *Kirikiri::ZLIB_uncompress)          (byte* pTarget, uint* pTargetLength, const byte* pSource, uint sourceLength);
-
-HMODULE Kirikiri::GameModuleHandle;
-Kirikiri::Section Kirikiri::GameTextSection;
-vector<Kirikiri::Section> Kirikiri::PossibleGameDataSections;
-
-function<void()> Kirikiri::InitializationCallback;
-
 void Kirikiri::Init(const function<void()>& callback)
 {
-    GameModuleHandle = GetModuleHandle(nullptr);
-    FindTextAndDataSections();
     InitializationCallback = callback;
 
+    GameModuleHandle = GetModuleHandle(nullptr);
+    GameModuleSize = DetourGetModuleSize(GameModuleHandle);
+	
+    FindTextAndDataSections();
     SetGameStartupMemoryBreakpoints();
 }
 
@@ -25,7 +18,7 @@ void Kirikiri::FindTextAndDataSections()
     if (GameTextSection.Start != nullptr)
         return;
 
-    vector<Section> sections = GetSections(GameModuleHandle);
+    vector<PE::Section> sections = PE::GetSections(GameModuleHandle);
     GameTextSection = sections[0];
     for (int i = 1; i < sections.size(); i++)
     {
@@ -37,25 +30,6 @@ void Kirikiri::FindTextAndDataSections()
     }
 }
 
-vector<Kirikiri::Section> Kirikiri::GetSections(HMODULE hModule)
-{
-    IMAGE_DOS_HEADER* pDosHeader = (IMAGE_DOS_HEADER*)hModule;
-    IMAGE_NT_HEADERS* pNtHeaders = (IMAGE_NT_HEADERS*)((byte*)GameModuleHandle + pDosHeader->e_lfanew);
-    IMAGE_SECTION_HEADER* pSectionHeaders = IMAGE_FIRST_SECTION(pNtHeaders);
-
-    vector<Section> sections;
-    for (int i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++)
-    {
-        Section section;
-        memcpy(section.Name, pSectionHeaders[i].Name, 8);
-        section.Start = (byte*)GameModuleHandle + pSectionHeaders[i].VirtualAddress;
-        section.Size = pSectionHeaders[i].Misc.VirtualSize;
-        section.Characteristics = pSectionHeaders[i].Characteristics;
-        sections.push_back(section);
-    }
-    return sections;
-}
-
 void Kirikiri::SetGameStartupMemoryBreakpoints()
 {
     if (IsGamePacked())
@@ -64,9 +38,9 @@ void Kirikiri::SetGameStartupMemoryBreakpoints()
     	// and then the .data section from start to end. In other words, if we catch an
     	// access to the last page of the .data section, we assume the game is (almost)
     	// completely decrypted.
-        for (const Section& section : PossibleGameDataSections)
+        for (const PE::Section& section : PossibleGameDataSections)
         {
-            Debugger::AddMemoryBreakpoint((byte*)section.Start + ((section.Size - 1) & ~0xFFF), 0x1000);
+            Debugger::AddMemoryBreakpoint(section.Start + ((section.Size - 1) & ~0xFFF), 0x1000);
         }
     }
     else
@@ -81,7 +55,7 @@ void Kirikiri::SetGameStartupMemoryBreakpoints()
 
 bool Kirikiri::IsGamePacked()
 {
-    return DetourGetEntryPoint(GameModuleHandle) >= (byte*)GameTextSection.Start + GameTextSection.Size;
+    return DetourGetEntryPoint(GameModuleHandle) >= GameTextSection.Start + GameTextSection.Size;
 }
 
 void Kirikiri::HandleMemoryBreakpointForGameStartup(CONTEXT* pContext)
@@ -121,7 +95,10 @@ void Kirikiri::FinishInitialization()
 {
     TVPExportTable = FindTVPExportTable();
     if (TVPExportTable == nullptr)
-        throw exception("Initialization failed");
+    {
+        Debugger::Log(L"Failed to find TVP export table - initialization aborted");
+        return;
+    }
 
     Debugger::Log(L"Found TVP export table at %08X", TVPExportTable);
 	
@@ -137,15 +114,15 @@ void Kirikiri::FinishInitialization()
 void* Kirikiri::FindTVPExportFunctionPointersEnd()
 {
     void* pCodeStart = GameTextSection.Start;
-    void* pCodeEnd = (byte*)GameTextSection.Start + GameTextSection.Size;
+    void* pCodeEnd = GameTextSection.Start + GameTextSection.Size;
 	
     for (auto it = PossibleGameDataSections.begin(); it != PossibleGameDataSections.end(); ++it)
     {
-        const Section& section = *it;
+        const PE::Section& section = *it;
     	
         int numConsecutiveFunctionPointers = 0;
         
-        void** pSectionEnd = (void**)((byte*)section.Start + section.Size);
+        void** pSectionEnd = (void**)(section.Start + section.Size);
         for (void** ppFunc = (void**)section.Start; ppFunc < pSectionEnd; ppFunc++)
         {
             void* pFunc = *ppFunc;
@@ -166,7 +143,7 @@ void* Kirikiri::FindTVPExportFunctionPointersEnd()
 
 tTJSHashTable<ttstr, void*>* Kirikiri::FindTVPExportTable()
 {
-    for (const Section& dataSection : PossibleGameDataSections)
+    for (const PE::Section& dataSection : PossibleGameDataSections)
     {
         void* pTable = MemoryUtil::FindData(dataSection.Start, dataSection.Size, ExportHashTableData, ExportHashTableMask, sizeof(ExportHashTableData));
         if (pTable != nullptr)
@@ -177,30 +154,27 @@ tTJSHashTable<ttstr, void*>* Kirikiri::FindTVPExportTable()
 
 void* Kirikiri::GetTrampoline(void* pTarget)
 {
-    // Certain Kirikiri builds really don't like it if you patch their export table with
-	// a function pointer that's not inside their .text section. The solution is easy:
-	// write a jmp instruction at the end of the .text section (to make sure we're not
+    // Certain Kirikiri plugins really don't like it if you patch the engine's export table
+    // with a function pointer that's not inside the engine. The solution is easy:
+	// write a jmp instruction at the end of the engine's .text section (to make sure we're not
 	// clobbering any existing code) and place the address of that jmp in the export
 	// table instead.
 	
-    static byte* pPrevJump = (byte*)GameTextSection.Start + GameTextSection.Size;
+    static BYTE* pPrevJump = GameTextSection.Start + GameTextSection.Size;
 
-    byte* pJump = pPrevJump - 5;
+    BYTE* pJump = pPrevJump - 5;
     pPrevJump = pJump;
-	
-    DWORD protection;
-    VirtualProtect(pJump, 5, PAGE_READWRITE, &protection);
-	
-    *pJump = 0xE9;
-    *(int*)(pJump + 1) = (byte*)pTarget - (pJump + 5);
 
-    VirtualProtect(pJump, 5, protection, &protection);
+    PageUnprotector unprotect(pJump, 5);
+    *pJump = 0xE9;
+    *(int*)(pJump + 1) = (BYTE*)pTarget - (pJump + 5);
+
     return pJump;
 }
 
 tTJSHashTable<ttstr, void*>* Kirikiri::TVPExportTable;
 
-byte Kirikiri::ExportHashTableData[] =
+BYTE Kirikiri::ExportHashTableData[] =
 {
     0x40, 0xCB, 0xBC, 0x1F, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -332,7 +306,7 @@ byte Kirikiri::ExportHashTableData[] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-byte Kirikiri::ExportHashTableMask[] =
+BYTE Kirikiri::ExportHashTableMask[] =
 {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

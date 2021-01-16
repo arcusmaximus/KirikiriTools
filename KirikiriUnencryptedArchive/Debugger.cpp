@@ -19,7 +19,7 @@ void Debugger::AddMemoryBreakpoint(void* address, int size)
 
     for (const MemoryBreakpoint& breakpoint : MemoryBreakpoints)
     {
-        if (address < (byte*)breakpoint.GetAddress() + breakpoint.GetSize() && (byte*)address + size > breakpoint.GetAddress())
+        if (address < (BYTE*)breakpoint.GetAddress() + breakpoint.GetSize() && (BYTE*)address + size > breakpoint.GetAddress())
             throw exception("Memory breakpoint overlaps with an existing one");
     }
 	
@@ -109,10 +109,10 @@ Debugger::MemoryBreakpoint::MemoryBreakpoint(void* address, int size)
 
 Debugger::MemoryBreakpoint::~MemoryBreakpoint()
 {
-    byte* pFrom = (byte*)_address;
-    byte* pTo = pFrom + _size;
+    BYTE* pFrom = (BYTE*)_address;
+    BYTE* pTo = pFrom + _size;
 
-    for (byte* pPage = pFrom; pPage < pTo; pPage += 0x1000)
+    for (BYTE* pPage = pFrom; pPage < pTo; pPage += 0x1000)
     {
         MEMORY_BASIC_INFORMATION info;
         VirtualQuery(pPage, &info, sizeof(info));
@@ -122,10 +122,10 @@ Debugger::MemoryBreakpoint::~MemoryBreakpoint()
 
 void Debugger::MemoryBreakpoint::Reapply() const
 {
-    byte* pFrom = (byte*)_address;
-    byte* pTo = pFrom + _size;
+    BYTE* pFrom = (BYTE*)_address;
+    BYTE* pTo = pFrom + _size;
 
-    for (byte* pPage = pFrom; pPage < pTo; pPage += 0x1000)
+    for (BYTE* pPage = pFrom; pPage < pTo; pPage += 0x1000)
     {
         MEMORY_BASIC_INFORMATION info;
         VirtualQuery(pPage, &info, sizeof(info));

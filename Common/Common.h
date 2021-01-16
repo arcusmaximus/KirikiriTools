@@ -1,10 +1,7 @@
 #pragma once
 
-typedef unsigned char byte;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
 #include "MemoryUtil.h"
+#include "PageUnprotector.h"
 #include "StringUtil.h"
 #include "Stream.h"
 #include "FileStream.h"

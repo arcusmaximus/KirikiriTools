@@ -49,12 +49,12 @@ void FileStream::AlignByte()
     throw exception("Not implemented");
 }
 
-byte FileStream::PeekByte() const
+BYTE FileStream::PeekByte() const
 {
     assert(GetPosition() < Size());
 
     __int64 position = _ftelli64(_pFile);
-    byte b;
+    BYTE b;
     fread(&b, 1, 1, _pFile);
     _fseeki64(_pFile, position, SEEK_SET);
     return b;
@@ -66,7 +66,7 @@ void FileStream::ReadBytes(void* pBuffer, int size)
     fread(pBuffer, 1, size, _pFile);
 }
 
-uint FileStream::ReadBits(int count)
+DWORD FileStream::ReadBits(int count)
 {
     throw exception("Not implemented");
 }

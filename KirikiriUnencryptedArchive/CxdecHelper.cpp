@@ -34,8 +34,8 @@ bool CxdecHelper::IsCxdecArchive(const ttstr& path)
 {
     FileStream stream(path.c_str(), L"rb");
 
-    static byte expectedHeader[] = { 0x58, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67, 0x01 };
-    byte header[11];
+    static BYTE expectedHeader[] = { 0x58, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67, 0x01 };
+    BYTE header[11];
     stream.ReadBytes(header, sizeof(header));
     if (memcmp(header, expectedHeader, sizeof(header)) != 0)
         return false;
@@ -45,8 +45,8 @@ bool CxdecHelper::IsCxdecArchive(const ttstr& path)
         __int64 indexOffset = stream.ReadInt64();
         stream.SetPosition(indexOffset);
 
-        byte indexFlags = stream.ReadByte();
-        uint indexSize = (uint)stream.ReadInt64();
+        BYTE indexFlags = stream.ReadByte();
+        int indexSize = (int)stream.ReadInt64();
 
         if ((indexFlags & TVP_XP3_INDEX_CONTINUE) != 0)
         {
@@ -55,14 +55,14 @@ bool CxdecHelper::IsCxdecArchive(const ttstr& path)
             continue;
         }
 
-        vector<byte> indexData;
+        vector<BYTE> indexData;
         if ((indexFlags & TVP_XP3_INDEX_ENCODE_METHOD_MASK) == TVP_XP3_INDEX_ENCODE_ZLIB)
         {
-            uint compressedIndexSize = indexSize;
-            indexSize = (uint)stream.ReadInt64();
+            int compressedIndexSize = indexSize;
+            indexSize = (int)stream.ReadInt64();
 
             indexData.resize(indexSize);
-            vector<byte> compressedIndexData(compressedIndexSize);
+            vector<BYTE> compressedIndexData(compressedIndexSize);
             stream.ReadBytes(compressedIndexData.data(), compressedIndexSize);
             Kirikiri::ZLIB_uncompress(indexData.data(), &indexSize, compressedIndexData.data(), compressedIndexSize);
         }
@@ -75,7 +75,7 @@ bool CxdecHelper::IsCxdecArchive(const ttstr& path)
         {
             throw exception("Unknown XP3 index encoding");
         }
-        return indexSize >= 4 && *((uint *)indexData.data()) != 0x656C6946;
+        return indexSize >= 4 && *((int *)indexData.data()) != 0x656C6946;
     }
 }
 

@@ -1,9 +1,11 @@
 #include "stdafx.h"
 
-void* MemoryUtil::FindByte(void* pStart, int length, byte value)
+using namespace std;
+
+void* MemoryUtil::FindByte(const void* pStart, int length, BYTE value)
 {
-    byte* pByte = (byte*)pStart;
-    byte* pEnd = pByte + length;
+    BYTE* pByte = (BYTE*)pStart;
+    BYTE* pEnd = pByte + length;
     for (; pByte < pEnd; pByte++)
     {
         if (*pByte == value)
@@ -12,7 +14,7 @@ void* MemoryUtil::FindByte(void* pStart, int length, byte value)
     return nullptr;
 }
 
-void** MemoryUtil::FindAlignedPointer(void* pStart, int length, void* value)
+void** MemoryUtil::FindAlignedPointer(const void* pStart, int length, void* value)
 {
     void** pPointer = (void **)pStart;
     void** pEnd = pPointer + length / sizeof(void*);
@@ -24,10 +26,10 @@ void** MemoryUtil::FindAlignedPointer(void* pStart, int length, void* value)
     return nullptr;
 }
 
-void* MemoryUtil::FindData(void* pHaystack, int haystackLength, void* pNeedle, int needleLength)
+void* MemoryUtil::FindData(const void* pHaystack, int haystackLength, const void* pNeedle, int needleLength)
 {
-    byte* pTest = (byte*)pHaystack;
-    byte* pEnd = pTest + haystackLength - needleLength;
+    BYTE* pTest = (BYTE*)pHaystack;
+    BYTE* pEnd = pTest + haystackLength - needleLength;
     for (; pTest <= pEnd; pTest++)
     {
         if (memcmp(pTest, pNeedle, needleLength) == 0)
@@ -36,19 +38,19 @@ void* MemoryUtil::FindData(void* pHaystack, int haystackLength, void* pNeedle, i
     return nullptr;
 }
 
-void* MemoryUtil::FindData(void* pHaystack, int haystackLength, void* pNeedle, void* pNeedleMask, int needleLength)
+void* MemoryUtil::FindData(const void* pHaystack, int haystackLength, const void* pNeedle, const void* pNeedleMask, int needleLength)
 {
-    byte* pTest = (byte*)pHaystack;
-    byte* pEnd = pTest + haystackLength - needleLength;
+    BYTE* pTest = (BYTE*)pHaystack;
+    BYTE* pEnd = pTest + haystackLength - needleLength;
     for (; pTest <= pEnd; pTest++)
     {
         int offset = 0;
         bool failed = false;
         for (; offset < (needleLength & ~3); offset += 4)
         {
-            uint test   = *(uint*)(pTest + offset);
-            uint needle = *(uint*)((byte*)pNeedle + offset);
-            uint mask   = *(uint*)((byte*)pNeedleMask + offset);
+            DWORD test   = *(DWORD*)(pTest + offset);
+            DWORD needle = *(DWORD*)((BYTE*)pNeedle + offset);
+            DWORD mask   = *(DWORD*)((BYTE*)pNeedleMask + offset);
             if ((test & mask) != needle)
             {
                 failed = true;
@@ -60,9 +62,9 @@ void* MemoryUtil::FindData(void* pHaystack, int haystackLength, void* pNeedle, v
 
         for (; offset < needleLength; offset++)
         {
-            byte test   = pTest[offset];
-            byte needle = *((byte*)pNeedle + offset);
-            byte mask   = *((byte*)pNeedleMask + offset);
+            BYTE test   = pTest[offset];
+            BYTE needle = *((BYTE*)pNeedle + offset);
+            BYTE mask   = *((BYTE*)pNeedleMask + offset);
             if ((test & mask) != needle)
             {
                 failed = true;
@@ -79,8 +81,6 @@ void* MemoryUtil::FindData(void* pHaystack, int haystackLength, void* pNeedle, v
 
 void MemoryUtil::WritePointer(void** ptr, void* value)
 {
-    DWORD oldProtect;
-    VirtualProtect(ptr, sizeof(value), PAGE_READWRITE, &oldProtect);
+    PageUnprotector unprotector(ptr, 4);
     *ptr = value;
-    VirtualProtect(ptr, sizeof(value), oldProtect, &oldProtect);
 }

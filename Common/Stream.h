@@ -21,18 +21,18 @@ public:
     virtual void        SkipBits                (int count) = 0;
     virtual void        AlignByte               () = 0;
 
-    virtual byte        PeekByte                () const = 0;
+    virtual BYTE        PeekByte                () const = 0;
 
     virtual void        ReadBytes               (void* pBuffer, int size) = 0;
-    std::vector<byte>   ReadBytes               (int size);
-    virtual uint        ReadBits                (int count) = 0;
+    std::vector<BYTE>   ReadBytes               (int size);
+    virtual DWORD       ReadBits                (int count) = 0;
     char                ReadChar                ();
     wchar_t             ReadWChar               ();
-    byte                ReadByte                ();
+    BYTE                ReadByte                ();
     short               ReadInt16               ();
-    ushort              ReadUInt16              ();
+    unsigned short      ReadUInt16              ();
     int                 ReadInt32               ();
-    uint                ReadUInt32              ();
+    unsigned int        ReadUInt32              ();
     int                 ReadVarInt32            ();
     __int64             ReadInt64               ();
     unsigned __int64    ReadUInt64              ();
@@ -60,14 +60,14 @@ public:
     }
 
     virtual void        Write                   (const void* pData, int size) = 0;
-    void                Write                   (const std::vector<byte>& data);
+    void                Write                   (const std::vector<BYTE>& data);
     void                Write                   (char value);
     void                Write                   (wchar_t value);
-    void                Write                   (byte value);
+    void                Write                   (BYTE value);
     void                Write                   (short value);
-    void                Write                   (ushort value);
+    void                Write                   (unsigned short value);
     void                Write                   (int value);
-    void                Write                   (uint value);
+    void                Write                   (unsigned int value);
     void                WriteVar                (int value);
     void                Write                   (__int64 value);
     void                Write                   (unsigned __int64 value);

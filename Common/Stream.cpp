@@ -21,9 +21,9 @@ bool Stream::IsReadOnly() const
     return _readOnly;
 }
 
-vector<byte> Stream::ReadBytes(int size)
+vector<BYTE> Stream::ReadBytes(int size)
 {
-    vector<byte> result(size);
+    vector<BYTE> result(size);
     ReadBytes(result.data(), size);
     return result;
 }
@@ -42,9 +42,9 @@ wchar_t Stream::ReadWChar()
     return c;
 }
 
-byte Stream::ReadByte()
+BYTE Stream::ReadByte()
 {
-    byte uc;
+    BYTE uc;
     ReadStruct(uc);
     return uc;
 }
@@ -56,9 +56,9 @@ short Stream::ReadInt16()
     return s;
 }
 
-ushort Stream::ReadUInt16()
+unsigned short Stream::ReadUInt16()
 {
-    ushort us;
+    unsigned short us;
     ReadStruct(us);
     return us;
 }
@@ -70,9 +70,9 @@ int Stream::ReadInt32()
     return i;
 }
 
-uint Stream::ReadUInt32()
+unsigned int Stream::ReadUInt32()
 {
-    uint ui;
+    unsigned int ui;
     ReadStruct(ui);
     return ui;
 }
@@ -87,8 +87,8 @@ int Stream::ReadVarInt32()
     if ((result & 0x4000) == 0)
         return result;
 
-    byte uc1 = ReadByte();
-    byte uc0 = ReadByte();
+    BYTE uc1 = ReadByte();
+    BYTE uc0 = ReadByte();
     result = ((result & 0x3FFF) << 16) | (uc1 << 8) | uc0;
     return result;
 }
@@ -170,7 +170,7 @@ wstring Stream::ReadVarUtf16String()
     return ReadUtf16String(ReadVarInt32());
 }
 
-void Stream::Write(const vector<byte>& data)
+void Stream::Write(const vector<BYTE>& data)
 {
     Write(data.data(), data.size());
 }
@@ -185,7 +185,7 @@ void Stream::Write(wchar_t value)
     WriteStruct(value);
 }
 
-void Stream::Write(byte value)
+void Stream::Write(BYTE value)
 {
     WriteStruct(value);
 }
@@ -195,7 +195,7 @@ void Stream::Write(short value)
     WriteStruct(value);
 }
 
-void Stream::Write(ushort value)
+void Stream::Write(unsigned short value)
 {
     WriteStruct(value);
 }
@@ -205,7 +205,7 @@ void Stream::Write(int value)
     WriteStruct(value);
 }
 
-void Stream::Write(uint value)
+void Stream::Write(unsigned int value)
 {
     WriteStruct(value);
 }
@@ -214,19 +214,19 @@ void Stream::WriteVar(int value)
 {
     if (value <= 0x7F)
     {
-        Write((byte)value);
+        Write((BYTE)value);
     }
     else if (value <= 0x3FFF)
     {
-        Write((byte)(0x80 | (value >> 8)));
-        Write((byte)value);
+        Write((BYTE)(0x80 | (value >> 8)));
+        Write((BYTE)value);
     }
     else
     {
-        Write((byte)(0xC0 | (value >> 24)));
-        Write((byte)(value >> 16));
-        Write((byte)(value >> 8));
-        Write((byte)value);
+        Write((BYTE)(0xC0 | (value >> 24)));
+        Write((BYTE)(value >> 16));
+        Write((BYTE)(value >> 8));
+        Write((BYTE)value);
     }
 }
 
@@ -279,7 +279,7 @@ void Stream::WriteVarUtf16String(const wstring& wstr)
 void Stream::Write(Stream& stream)
 {
     int bytesLeft = stream.Size() - stream.GetPosition();
-    byte buffer[0x1000];
+    BYTE buffer[0x1000];
     while (bytesLeft > 0)
     {
         int chunkSize = min(bytesLeft, (int)sizeof(buffer));

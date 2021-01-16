@@ -19,9 +19,9 @@ public:
     virtual void            SkipBits            (int count) override;
     virtual void            AlignByte           () override;
 
-    virtual byte            PeekByte            () const override;
+    virtual BYTE            PeekByte            () const override;
     virtual void            ReadBytes           (void* pBuffer, int size) override;
-    virtual uint            ReadBits            (int count) override;
+    virtual DWORD           ReadBits            (int count) override;
 
     virtual void            Write               (const void* pData, int size) override;
     using Stream::Write;
