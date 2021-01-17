@@ -181,7 +181,7 @@ tTJSHashTable<ttstr, void*>* Kirikiri::FindTVPExportTable()
 {
     for (const PE::Section& dataSection : PossibleGameDataSections)
     {
-        void* pTable = MemoryUtil::FindData(dataSection.Start, dataSection.Size, ExportHashTableData, ExportHashTableMask, sizeof(ExportHashTableData));
+        void* pTable = MemoryUtil::FindData(dataSection.Start, dataSection.Size, ExportHashTableData, ExportHashTableMask, 0x30 * 0x10);
         if (pTable != nullptr)
             return (tTJSHashTable<ttstr, void*>*)pTable;
     }
