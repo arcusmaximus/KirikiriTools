@@ -181,9 +181,13 @@ tTJSHashTable<ttstr, void*>* Kirikiri::FindTVPExportTable()
 {
     for (const PE::Section& dataSection : PossibleGameDataSections)
     {
-        void* pTable = MemoryUtil::FindData(dataSection.Start, dataSection.Size, ExportHashTableData, ExportHashTableMask, 0x30 * 0x10);
-        if (pTable != nullptr)
-            return (tTJSHashTable<ttstr, void*>*)pTable;
+        const int blockSize = 0x200;
+        for (int offset = 0; offset < sizeof(ExportHashTableData); offset += blockSize)
+        {
+            void* pTable = MemoryUtil::FindData(dataSection.Start, dataSection.Size, ExportHashTableData + offset, ExportHashTableMask + offset, blockSize);
+            if (pTable != nullptr)
+                return (tTJSHashTable<ttstr, void*>*)((BYTE *)pTable - offset);
+        }
     }
     return nullptr;
 }
