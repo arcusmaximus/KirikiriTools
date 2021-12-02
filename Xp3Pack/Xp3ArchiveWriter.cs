@@ -21,13 +21,16 @@ namespace Arc.Ddsi.Xp3Pack
 
                 foreach (string filePath in Directory.EnumerateFiles(folderPath, "*", SearchOption.AllDirectories))
                 {
+                    string extension = Path.GetExtension(filePath);
+                    bool compressed = extension != ".mpg";
+
                     long offset = xp3Stream.Position;
                     long originalSize;
                     long compressedSize;
-                    AppendFile(xp3Stream, filePath, out originalSize, out compressedSize);
+                    AppendFile(xp3Stream, filePath, compressed, out originalSize, out compressedSize);
 
                     string relativeFilePath = filePath.Substring(folderPath.Length);
-                    index.Add(relativeFilePath, offset, originalSize, compressedSize);
+                    index.Add(relativeFilePath, offset, originalSize, compressedSize, compressed);
                 }
 
                 long indexOffset = xp3Stream.Length;
@@ -38,17 +41,25 @@ namespace Arc.Ddsi.Xp3Pack
             }
         }
 
-        private static void AppendFile(Stream xp3Stream, string filePath, out long originalSize, out long compressedSize)
+        private static void AppendFile(Stream xp3Stream, string filePath, bool compressed, out long originalSize, out long compressedSize)
         {
             using (Stream fileStream = File.OpenRead(filePath))
             {
                 originalSize = fileStream.Length;
 
                 long startPos = xp3Stream.Position;
-                using (ZlibStream compressionStream = new ZlibStream(xp3Stream))
+                if (compressed)
                 {
-                    fileStream.CopyTo(compressionStream);
+                    using (ZlibStream compressionStream = new ZlibStream(xp3Stream))
+                    {
+                        fileStream.CopyTo(compressionStream);
+                    }
                 }
+                else
+                {
+                    fileStream.CopyTo(xp3Stream);
+                }
+
                 compressedSize = xp3Stream.Position - startPos;
             }
         }

@@ -32,6 +32,9 @@ void Patcher::PatchAutoPathExports()
 
 void Patcher::CustomTVPAddAutoPath(const ttstr& url)
 {
+    if (&url == nullptr)
+        return;
+
     if (!CxdecHelper::IsCxdecUrl(url))
     {
         OriginalTVPAddAutoPath(url);
@@ -52,6 +55,9 @@ void Patcher::CustomTVPAddAutoPath(const ttstr& url)
 
 void Patcher::CustomTVPRemoveAutoPath(const ttstr& url)
 {
+    if (&url == nullptr)
+        return;
+
     if (!CxdecHelper::IsCxdecUrl(url))
     {
         OriginalTVPRemoveAutoPath(url);

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -28,9 +29,9 @@ namespace Arc.Ddsi.Xp3Pack
             _writer.Write(0L);           // Index size
         }
 
-        public void Add(string fileName, long offset, long originalSize, long compressedSize)
+        public void Add(string fileName, long offset, long originalSize, long compressedSize, bool compressed)
         {
-            WriteFileChunk(fileName, offset, originalSize, compressedSize);
+            WriteFileChunk(fileName, offset, originalSize, compressedSize, compressed);
         }
 
         public byte[] Build()
@@ -43,11 +44,11 @@ namespace Arc.Ddsi.Xp3Pack
             return result;
         }
 
-        private void WriteFileChunk(string fileName, long offset, long originalSize, long compressedSize)
+        private void WriteFileChunk(string fileName, long offset, long originalSize, long compressedSize, bool compressed)
         {
             BeginChunk(ChunkType.File);
             WriteInfoChunk(fileName, originalSize, compressedSize);
-            WriteSegmentChunk(offset, originalSize, compressedSize);
+            WriteSegmentChunk(offset, originalSize, compressedSize, compressed);
             WriteChecksumChunk();
             EndChunk();
         }
@@ -63,13 +64,13 @@ namespace Arc.Ddsi.Xp3Pack
             EndChunk();
         }
 
-        private void WriteSegmentChunk(long offset, long originalSize, long compressedSize)
+        private void WriteSegmentChunk(long offset, long originalSize, long compressedSize, bool compressed)
         {
             BeginChunk(ChunkType.Segment);
-            _writer.Write(1);                   // Flags (1 = compressed)
-            _writer.Write(offset);              // Offset in archive
-            _writer.Write(originalSize);        // Original size
-            _writer.Write(compressedSize);      // Compressed size
+            _writer.Write(Convert.ToInt32(compressed));     // Flags (1 = compressed)
+            _writer.Write(offset);                          // Offset in archive
+            _writer.Write(originalSize);                    // Original size
+            _writer.Write(compressedSize);                  // Compressed size
             EndChunk();
         }
 
