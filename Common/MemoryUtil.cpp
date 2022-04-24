@@ -81,6 +81,6 @@ void* MemoryUtil::FindData(const void* pHaystack, int haystackLength, const void
 
 void MemoryUtil::WritePointer(void** ptr, void* value)
 {
-    PageUnprotector unprotector(ptr, 4);
+    PageUnprotector unprotector(ptr, sizeof(value));
     *ptr = value;
 }

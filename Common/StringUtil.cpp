@@ -2,40 +2,6 @@
 
 using namespace std;
 
-string StringUtil::Format(const char* pFormat, ...)
-{
-    va_list args;
-
-    va_start(args, pFormat);
-    int length = snprintf(nullptr, 0, pFormat, args);
-    va_end(args);
-
-    va_start(args, pFormat);
-    string result;
-    result.resize(length);
-    sprintf(const_cast<char*>(result.c_str()), pFormat, args);
-    va_end(args);
-
-    return result;
-}
-
-wstring StringUtil::Format(const wchar_t* pFormat, ...)
-{
-    va_list args;
-
-    va_start(args, pFormat);
-    int length = _vsnwprintf(nullptr, 0, pFormat, args);
-    va_end(args);
-
-    va_start(args, pFormat);
-    wstring result;
-    result.resize(length);
-    wvsprintf(const_cast<wchar_t*>(result.c_str()), pFormat, args);
-    va_end(args);
-
-    return result;
-}
-
 wstring StringUtil::ToUTF16(const string& str)
 {
     std::wstring wstr;

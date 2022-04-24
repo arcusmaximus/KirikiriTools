@@ -4,11 +4,10 @@ using namespace std;
 
 void CompilerHelper::Init()
 {
-    GameModuleHandle = GetModuleHandle(nullptr);
-    GameModuleSize = DetourGetModuleSize(GameModuleHandle);
-    GameSections = PE::GetSections(GameModuleHandle);
+    HMODULE hGame = GetModuleHandle(nullptr);
+    vector<PE::Section> gameSections = PE::GetSections(hGame);
 
-    const PE::Section& textSection = GameSections[0];
+    const PE::Section& textSection = gameSections[0];
     if (MemoryUtil::FindData(textSection.Start, textSection.Size, "Borland", 7) != nullptr)
         CompilerType = CompilerType::Borland;
     else
@@ -17,13 +16,36 @@ void CompilerHelper::Init()
 
 void** CompilerHelper::FindVTable(const string& className)
 {
-    const PE::Section& textSection = GameSections[0];
+    return FindVTable(GetModuleHandle(nullptr), CompilerType, className);
+}
+
+void** CompilerHelper::FindVTable(HMODULE hModule, ::CompilerType compilerType, const std::string& className)
+{
+    void* pModuleStart = (void*)hModule;
+    void* pModuleEnd = (BYTE*)pModuleStart + DetourGetModuleSize(hModule);
+
+    vector<PE::Section> sections = PE::GetSections(hModule);
+    const PE::Section& textSection = sections[0];
     void* pCodeStart = textSection.Start;
     void* pCodeEnd = (BYTE*)textSection.Start + textSection.Size;
 
-    for (int i = 1; i < GameSections.size(); i++)
+    string typeDescriptorClassName;
+    switch (compilerType)
     {
-        const PE::Section& section = GameSections[i];
+        case CompilerType::Borland:
+            typeDescriptorClassName = className;
+            break;
+
+        case CompilerType::Msvc:
+            vector<string> parts = StringUtil::Split<char>(className, "::");
+            std::ranges::reverse(parts);
+            typeDescriptorClassName = StringUtil::Join<char>(parts, "@");
+            break;
+    }
+
+    for (int i = 1; i < sections.size(); i++)
+    {
+        const PE::Section& section = sections[i];
         void* pSectionStart = section.Start;
         void* pSectionEnd = (BYTE*)section.Start + section.Size;
         for (void** ppFunc = (void**)pSectionStart + 3; ppFunc < pSectionEnd; ppFunc++)
@@ -31,21 +53,18 @@ void** CompilerHelper::FindVTable(const string& className)
             if (*ppFunc < pCodeStart || *ppFunc >= pCodeEnd)
                 continue;
 
-            if (CompilerType == CompilerType::Borland && HasBorlandTypeDescriptor(ppFunc, className))
+            if (compilerType == CompilerType::Borland && HasBorlandTypeDescriptor(ppFunc, typeDescriptorClassName, pModuleStart, pModuleEnd))
                 return ppFunc;
 
-            if (CompilerType == CompilerType::Msvc && HasMsvcTypeDescriptor(ppFunc, className))
+            if (compilerType == CompilerType::Msvc && HasMsvcTypeDescriptor(ppFunc, typeDescriptorClassName, pModuleStart, pModuleEnd))
                 return ppFunc;
         }
     }
     return nullptr;
 }
 
-bool CompilerHelper::HasBorlandTypeDescriptor(void** pVTable, const string& className)
+bool CompilerHelper::HasBorlandTypeDescriptor(void** pVTable, const string& className, void* pModuleStart, void* pModuleEnd)
 {
-    void* pModuleStart = GameModuleHandle;
-    void* pModuleEnd = (BYTE*)GameModuleHandle + GameModuleSize;
-
     BorlandTypeDescriptor* pTypeDescriptor = (BorlandTypeDescriptor*)pVTable[-3];
     if (pTypeDescriptor < pModuleStart || pTypeDescriptor >= pModuleEnd || pTypeDescriptor + 1 + className.size() > pModuleEnd)
         return false;
@@ -53,11 +72,8 @@ bool CompilerHelper::HasBorlandTypeDescriptor(void** pVTable, const string& clas
     return memcmp(pTypeDescriptor->Name, className.c_str(), className.size() + 1) == 0;
 }
 
-bool CompilerHelper::HasMsvcTypeDescriptor(void** pVTable, const string& className)
+bool CompilerHelper::HasMsvcTypeDescriptor(void** pVTable, const string& className, void* pModuleStart, void* pModuleEnd)
 {
-    void* pModuleStart = GameModuleHandle;
-    void* pModuleEnd = (BYTE*)GameModuleHandle + GameModuleSize;
-
     MsvcRttiCompleteObjectLocator* pLocator = (MsvcRttiCompleteObjectLocator*)pVTable[-1];
     if (pLocator < pModuleStart || pLocator >= pModuleEnd || pLocator + 1 > pModuleEnd ||
         pLocator->Signature != 0 ||

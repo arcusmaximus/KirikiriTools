@@ -2,14 +2,6 @@
 
 using namespace std;
 
-void* Debugger::ExceptionHandlerHandle;
-vector<Debugger::MemoryBreakpoint> Debugger::MemoryBreakpoints;
-function<void(CONTEXT*)> Debugger::MemoryBreakpointHandler;
-vector<Debugger::HardwareBreakpoint> Debugger::HardwareBreakpoints;
-
-function<void(CONTEXT*)> Debugger::CurrentBreakpointHandler;
-CONTEXT Debugger::CurrentBreakpointContext;
-
 void Debugger::AddMemoryBreakpoint(void* address, int size)
 {
     Log(L"Setting memory breakpoint at %08X with size %X", address, size);
@@ -91,13 +83,32 @@ void Debugger::ClearHardwareBreakpoints()
     CleanExceptionHandler();
 }
 
+void Debugger::RegisterDllLoadHandler(const function<void (const wchar_t*, HMODULE)>& handler)
+{
+    DllLoadHandlers.push_back(handler);
+
+    if (OriginalLoadLibraryW == nullptr)
+    {
+        OriginalLoadLibraryA = LoadLibraryA;
+        OriginalLoadLibraryW = LoadLibraryW;
+        OriginalLoadLibraryExA = LoadLibraryExA;
+        OriginalLoadLibraryExW = LoadLibraryExW;
+
+        DetourTransactionBegin();
+        DetourAttach((void**)&OriginalLoadLibraryA, LoadLibraryAHook);
+        DetourAttach((void**)&OriginalLoadLibraryW, LoadLibraryWHook);
+        DetourAttach((void**)&OriginalLoadLibraryExA, LoadLibraryExAHook);
+        DetourAttach((void**)&OriginalLoadLibraryExW, LoadLibraryExWHook);
+        DetourTransactionCommit();
+    }
+}
+
 void Debugger::Log(const wchar_t* pMessage, ...)
 {
-    wchar_t message[128];
     va_list args;
     va_start(args, pMessage);
-    StringCbVPrintf(message, sizeof(message), pMessage, args);
-    OutputDebugString(message);
+    wstring message = StringUtil::Format(pMessage, args);
+    OutputDebugString(message.c_str());
 }
 
 Debugger::MemoryBreakpoint::MemoryBreakpoint(void* address, int size)
@@ -273,4 +284,58 @@ void Debugger::ExecuteBreakpointHandler()
     CurrentBreakpointHandler = nullptr;
 
     ApplyMemoryBreakpoints();
+}
+
+HMODULE Debugger::LoadLibraryAHook(LPCSTR lpLibFileName)
+{
+    HMODULE hModule = OriginalLoadLibraryA(lpLibFileName);
+    if (hModule == nullptr)
+        return nullptr;
+
+    wstring filePath = StringUtil::ToUTF16(lpLibFileName);
+    for (auto handler : DllLoadHandlers)
+    {
+        handler(filePath.c_str(), hModule);
+    }
+    return hModule;
+}
+
+HMODULE Debugger::LoadLibraryWHook(LPCWSTR lpLibFileName)
+{
+    HMODULE hModule = OriginalLoadLibraryW(lpLibFileName);
+    if (hModule == nullptr)
+        return nullptr;
+
+    for (auto handler : DllLoadHandlers)
+    {
+        handler(lpLibFileName, hModule);
+    }
+    return hModule;
+}
+
+HMODULE Debugger::LoadLibraryExAHook(LPCSTR lpLibFileName, HANDLE hFile, DWORD dwFlags)
+{
+    HMODULE hModule = OriginalLoadLibraryExA(lpLibFileName, hFile, dwFlags);
+    if (hModule == nullptr)
+        return nullptr;
+
+    wstring filePath = StringUtil::ToUTF16(lpLibFileName);
+    for (auto handler : DllLoadHandlers)
+    {
+        handler(filePath.c_str(), hModule);
+    }
+    return hModule;
+}
+
+HMODULE Debugger::LoadLibraryExWHook(LPCWSTR lpLibFileName, HANDLE hFile, DWORD dwFlags)
+{
+    HMODULE hModule = OriginalLoadLibraryExW(lpLibFileName, hFile, dwFlags);
+    if (hModule == nullptr)
+        return nullptr;
+
+    for (auto handler : DllLoadHandlers)
+    {
+        handler(lpLibFileName, hModule);
+    }
+    return hModule;
 }

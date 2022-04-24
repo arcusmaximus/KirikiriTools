@@ -91,6 +91,7 @@
   <ItemGroup>
     <ClCompile Include="CompilerSpecific\CompilerHelper.cpp" />
     <ClCompile Include="CustomTVPXP3ArchiveStream.cpp" />
+    <ClCompile Include="Kirikiri\ProxyFunctionExporter.cpp" />
     <ClCompile Include="Patcher.cpp" />
     <ClCompile Include="PE\PE.cpp" />
     <ClCompile Include="Proxy.cpp" />
@@ -114,7 +115,10 @@
     <ClInclude Include="CompilerSpecific\CompilerHelper.h" />
     <ClInclude Include="CompilerSpecific\CompilerSpecificVector.h" />
     <ClInclude Include="CustomTVPXP3ArchiveStream.h" />
+    <ClInclude Include="Kirikiri\iTVPStorageMedia.h" />
+    <ClInclude Include="Kirikiri\ProxyFunctionExporter.h" />
     <ClInclude Include="Kirikiri\tTJSBinaryStream.h" />
+    <ClInclude Include="Kirikiri\tTJSHashTable.h" />
     <ClInclude Include="Kirikiri\tTVPArchive.h" />
     <ClInclude Include="Kirikiri\tTVPXP3Archive.h" />
     <ClInclude Include="Patcher.h" />
@@ -125,13 +129,11 @@
     <ClInclude Include="Kirikiri\iTJSDispatch2.h" />
     <ClInclude Include="Kirikiri\iTJSNativeInstance.h" />
     <ClInclude Include="Kirikiri\iTVPFunctionExporter.h" />
-    <ClInclude Include="Kirikiri\tTJSHashTable.h" />
     <ClInclude Include="Kirikiri\tTJSString.h" />
     <ClInclude Include="Kirikiri\tTJSVariant.h" />
     <ClInclude Include="Kirikiri\tTJSVariantClosure.h" />
     <ClInclude Include="Kirikiri\tTJSVariantOctet.h" />
     <ClInclude Include="Kirikiri\tTJSVariantString.h" />
-    <ClInclude Include="Kirikiri\tTVPXP3ExtractionFilterInfo.h" />
     <ClInclude Include="CompilerSpecific\Rtti\BorlandTypeDescriptor.h" />
     <ClInclude Include="CompilerSpecific\Rtti\MsvcRttiCompleteObjectLocator.h" />
     <ClInclude Include="CompilerSpecific\Enumerations.h" />

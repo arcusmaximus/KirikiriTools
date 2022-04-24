@@ -4,11 +4,15 @@
 
 #include <Windows.h>
 #include <strsafe.h>
+#include <algorithm>
 #include <cassert>
 #include <exception>
 #include <functional>
 #include <map>
+#include <ranges>
 #include <regex>
+#include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 

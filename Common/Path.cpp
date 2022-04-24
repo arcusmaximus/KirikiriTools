@@ -71,6 +71,16 @@ wstring Path::GetModuleFolderPath(HMODULE hModule)
     return GetDirectoryName(GetModuleFilePath(hModule));
 }
 
+wstring Path::GetFullPath(const wstring& path)
+{
+    DWORD length = GetFullPathName(path.c_str(), 0, nullptr, nullptr);
+    wstring fullPath;
+    fullPath.resize(length);
+    GetFullPathName(path.c_str(), fullPath.size(), fullPath.data(), nullptr);
+    fullPath.resize(fullPath.size() - 1);
+    return fullPath;
+}
+
 int Path::GetExtensionIndex(const wstring& filePath)
 {
     int lastSlashPos = filePath.find_last_of(L'\\');

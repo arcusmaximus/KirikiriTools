@@ -32,10 +32,12 @@ typedef tjs_real tTVReal;
 #include "tTJSString.h"
 #include "tTJSHashTable.h"
 #include "iTVPFunctionExporter.h"
-#include "tTVPXP3ExtractionFilterInfo.h"
 #include "tTJSBinaryStream.h"
 #include "tTVPArchive.h"
 #include "tTVPXP3Archive.h"
+#include "iTVPStorageMedia.h"
+
+#include "ProxyFunctionExporter.h"
 #pragma pack(pop)
 
 class Kirikiri
@@ -45,59 +47,42 @@ public:
 
     static inline void              (__stdcall *TVPExecuteExpression)               (const ttstr& content, tTJSVariant* pResult){};
     static inline int               (__stdcall *ZLIB_uncompress)                    (BYTE* pTarget, int* pTargetLength, const BYTE* pSource, int sourceLength){};
+    static inline bool              (__stdcall *TVPIsExistentStorageNoSearch)       (const ttstr&){};
+    static inline bool              (__stdcall *TVPIsExistentStorageNoSearchNoNormalize)(const ttstr&){};
+    static inline void*             (__stdcall *TVPCreateIStream)                   (const ttstr& name, tjs_uint32 flags){};
+    static inline tTJSBinaryStream* (__stdcall *TVPCreateBinaryStreamAdapter)       (void* pComStream){};
 
     template<typename T>
     static void                     ResolveScriptExport                             (const tjs_char* pszName, T*& pFunction)
     {
-        void** ppFunction = TVPExportTable->Find(pszName);
-        if (ppFunction == nullptr)
+        if (!RealFunctionExporter->QueryFunctions(&pszName, (void**)&pFunction, 1))
         {
-	        Debugger::Log(L"Failed to resolve %s", pszName);
+            Debugger::Log(L"Failed to resolve %s", pszName);
             throw std::exception("Failed to resolve function");
         }
-    	
+        
         Debugger::Log(L"Resolved %s", pszName);
-        pFunction = (T*)*ppFunction;
     }
 
     template<typename T>
-    static void                     ReplaceScriptExport                             (const tjs_char* pszName, T* pNewFunction, T*& pOldFunction)
+    static void                     HookScriptExport                                (const tjs_char* pszName, T** ppOldFunction, T* pNewFunction)
     {
-        void** ppFunction = TVPExportTable->Find(pszName);
-        if (ppFunction == nullptr)
-        {
-	        Debugger::Log(L"Failed to resolve %s for replacement", pszName);
-	        throw std::exception("Failed to resolve function for replacement");
-        }
-    	
-        Debugger::Log(L"Resolved %s for replacement", pszName);
-        pOldFunction = (T*)*ppFunction;
-        *ppFunction = GetTrampoline(pNewFunction);
+        ProxyFunctionExporter->Hook(pszName, (void**)ppOldFunction, GetTrampoline(pNewFunction));
     }
 
-    static inline HMODULE GameModuleHandle{};
-    static inline int GameModuleSize{};
-    static inline PE::Section GameTextSection{};
-    static inline std::vector<PE::Section> PossibleGameDataSections{};
+    static std::wstring                 FilePathToUrl                               (const std::wstring& path);
 
 private:
     static bool                         IsKirikiriExe                               ();
-	static void                         FindTextAndDataSections                     ();
-
-    static void                         SetGameStartupMemoryBreakpoints             ();
-	static bool                         IsGamePacked                                ();
-	static void                         HandleMemoryBreakpointForGameStartup        (CONTEXT* pContext);
-	static void                         HandleHwBreakpointForTVPExportTableInit     (CONTEXT* pContext);
-    static void                         FinishInitialization                        ();
-
-    static void*                        FindTVPExportFunctionPointersEnd            ();
-    static tTJSHashTable<ttstr, void*>* FindTVPExportTable                          ();
+    static void                         HandleDllLoaded                             (const wchar_t* pwszDllPath, HMODULE hDll);
+    static void                         V2LinkHook                                  ();
+    static void                         HandleV2Link                                (iTVPFunctionExporter** ppExporter);
 
     static void*                        GetTrampoline                               (void* pTarget);
 
     static inline std::function<void()> InitializationCallback{};
-	
-    static tTJSHashTable<ttstr, void*>* TVPExportTable;
-    static BYTE ExportHashTableData[2048];
-    static BYTE ExportHashTableMask[2048];
+
+    static inline iTVPFunctionExporter*  RealFunctionExporter{};
+    static inline ProxyFunctionExporter* ProxyFunctionExporter{};
+    static inline void* OriginalV2Link{};
 };

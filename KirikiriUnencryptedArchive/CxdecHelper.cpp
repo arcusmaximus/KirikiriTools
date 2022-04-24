@@ -15,9 +15,7 @@ bool CxdecHelper::IsCxdecUrl(const ttstr& url)
 
 ttstr CxdecHelper::CxdecUrlToXp3FilePath(const ttstr& url)
 {
-    wchar_t exePath[MAX_PATH];
-    GetModuleFileName(NULL, exePath, sizeof(exePath));
-    wstring folderPath = Path::GetDirectoryName(exePath);
+    wstring folderPath = Path::GetModuleFolderPath(nullptr);
 
     const wchar_t* pPathStart = url.c_str() + strlen("archive://");
     const wchar_t* pPathEnd = wcschr(pPathStart, L'/');

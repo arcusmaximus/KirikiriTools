@@ -14,6 +14,8 @@ public:
     static std::wstring     GetModuleFilePath           (HMODULE hModule);
     static std::wstring     GetModuleFolderPath         (HMODULE hModule);
 
+    static std::wstring     GetFullPath                 (const std::wstring& path);
+
 private:
     static int              GetExtensionIndex           (const std::wstring& filePath);
 };

@@ -4,7 +4,9 @@ class CompilerHelper
 {
 public:
     static void         Init                        ();
+
     static void**       FindVTable                  (const std::string& className);
+    static void**       FindVTable                  (HMODULE hModule, CompilerType compilerType, const std::string& className);
 
     static inline CompilerType CompilerType{};
 
@@ -183,10 +185,6 @@ private:
         }
     };
 
-    static inline HMODULE GameModuleHandle{};
-    static inline int GameModuleSize{};
-    static inline std::vector<PE::Section> GameSections{};
-
-    static bool         HasBorlandTypeDescriptor    (void** pVTable, const std::string& className);
-    static bool         HasMsvcTypeDescriptor       (void** pVTable, const std::string& className);
+    static bool         HasBorlandTypeDescriptor    (void** pVTable, const std::string& className, void* pModuleStart, void* pModuleEnd);
+    static bool         HasMsvcTypeDescriptor       (void** pVTable, const std::string& className, void* pModuleStart, void* pModuleEnd);
 };
