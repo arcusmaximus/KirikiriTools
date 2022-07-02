@@ -18,7 +18,7 @@ A DLL (named "version.dll") that makes games accept unencrypted .xp3 archives. B
 The DLL produces debug messages that can be seen with Microsoft's [DebugView](https://docs.microsoft.com/en-us/sysinternals/downloads/debugview) tool - this can be handy to confirm it's working.
 
 Some special features are available for helping with .xp3 archives that contain encrypted/hashed file names and aren't supported by other tools. Specifically, these features are available if DebugView shows a message such as "Hooking storage media 'arc'" when the game starts up (this doesn't apply to the media "psb").
-* If there's a file called `extract-unencrypted.txt` in the game's folder, the DLL will extract any files that the game accesses into a subfolder called "unencrypted", with their original names. Note that the files are only extracted as the game reads them, so if you want to extract everything, you have to skip though the entire game.
+* If there's a file called `extract-unencrypted.txt` in the game's folder, the DLL will extract any files that the game accesses into a subfolder called "unencrypted", with their original names. Note that the files are only extracted as the game reads them, so if you want to extract everything, you have to skip though the entire game. **If you can extract the archives with another tool, use that instead.**
 * If a file exists in the "unencrypted" folder, the game will use that one instead of the original in the encrypted .xp3 archives.
 * If a file exists in an archive called "unencrypted.xp3", the game will use that one instead of the original in the encrypted .xp3 archives.
 
