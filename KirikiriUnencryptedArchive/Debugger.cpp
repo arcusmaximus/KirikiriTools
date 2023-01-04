@@ -109,11 +109,11 @@ void* Debugger::FindExport(HMODULE hModule, const char* pszName)
 {
     FindExportContext context{};
     context.pszName = pszName;
-    DetourEnumerateExports(hModule, &context, CheckModuleExport);
+    DetourEnumerateExports(hModule, &context, CheckExport);
     return context.pFunction;
 }
 
-BOOL Debugger::CheckModuleExport(PVOID pContext, ULONG nOrdinal, LPCSTR pszName, PVOID pCode)
+BOOL Debugger::CheckExport(PVOID pContext, ULONG nOrdinal, LPCSTR pszName, PVOID pCode)
 {
     FindExportContext* pFindContext = (FindExportContext*)pContext;
     if (pszName != nullptr && strcmp(pszName, pFindContext->pszName) == 0)

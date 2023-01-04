@@ -72,7 +72,7 @@ private:
         void* pFunction;
     };
 
-    static BOOL __stdcall   CheckModuleExport               (PVOID pContext, ULONG nOrdinal, LPCSTR pszName, PVOID pCode);
+    static BOOL __stdcall   CheckExport                     (PVOID pContext, ULONG nOrdinal, LPCSTR pszName, PVOID pCode);
 
     static void             ApplyMemoryBreakpoints          ();
 
