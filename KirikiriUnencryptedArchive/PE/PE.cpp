@@ -14,7 +14,7 @@ vector<PE::Section> PE::GetSections(HMODULE hModule)
         Section section
         {
             .Start = (BYTE*)hModule + pSectionHeaders[i].VirtualAddress,
-            .Size = (int)pSectionHeaders[i].Misc.VirtualSize,
+            .Size = (int)pSectionHeaders[i].SizeOfRawData,
             .Characteristics = pSectionHeaders[i].Characteristics
         };
         memcpy(section.Name, pSectionHeaders[i].Name, 8);

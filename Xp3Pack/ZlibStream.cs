@@ -11,7 +11,7 @@ namespace Arc.Ddsi.Xp3Pack
         public ZlibStream(Stream innerStream)
             : base(innerStream, CompressionMode.Compress, true)
         {
-            byte[] header = { 0x78, 0x01 };
+            byte[] header = { 0x78, 0x9C };
             BaseStream.Write(header, 0, 2);
         }
 

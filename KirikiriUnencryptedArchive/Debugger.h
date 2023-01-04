@@ -29,6 +29,8 @@ public:
 
     static void             RegisterDllLoadHandler          (const std::function<void (const wchar_t*, HMODULE)>& handler);
 
+    static void*            FindExport                      (HMODULE hModule, const char* pszName);
+
     static void             Log                             (const wchar_t* pMessage, ...);
 
 private:
@@ -64,6 +66,14 @@ private:
         std::function<void (CONTEXT*)> _handler;
     };
 
+    struct FindExportContext
+    {
+        const char* pszName;
+        void* pFunction;
+    };
+
+    static BOOL __stdcall   CheckModuleExport               (PVOID pContext, ULONG nOrdinal, LPCSTR pszName, PVOID pCode);
+
     static void             ApplyMemoryBreakpoints          ();
 
     static void             EnsureExceptionHandler          ();
@@ -76,6 +86,8 @@ private:
     static void             ScheduleBreakpointHandler       (const std::function<void (CONTEXT*)>& handler, CONTEXT* pContext);
     static void             ExecuteBreakpointHandlerWrap    ();
     static void             ExecuteBreakpointHandler        ();
+
+    static BOOL WINAPI      VirtualProtectHook              (LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, PDWORD lpflOldProtect);
 
     static HMODULE WINAPI   LoadLibraryAHook                (LPCSTR  lpLibFileName);
     static HMODULE WINAPI   LoadLibraryWHook                (LPCWSTR lpLibFileName);
@@ -91,6 +103,7 @@ private:
     static inline CONTEXT CurrentBreakpointContext{};
 
     static inline std::vector<std::function<void (const wchar_t*, HMODULE)>> DllLoadHandlers{};
+    static inline decltype(VirtualProtect)* OriginalVirtualProtect{};
     static inline decltype(LoadLibraryA)* OriginalLoadLibraryA{};
     static inline decltype(LoadLibraryW)* OriginalLoadLibraryW{};
     static inline decltype(LoadLibraryExA)* OriginalLoadLibraryExA{};

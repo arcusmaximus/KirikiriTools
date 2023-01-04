@@ -59,7 +59,7 @@ bool Kirikiri::IsKirikiriExe()
 
 void Kirikiri::HandleDllLoaded(const wchar_t* pwszDllPath, HMODULE hDll)
 {
-    void* pLink = GetProcAddress(hDll, "V2Link");
+    void* pLink = Debugger::FindExport(hDll, "V2Link");
     if (pLink == nullptr)
         return;
 

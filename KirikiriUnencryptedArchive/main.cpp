@@ -9,7 +9,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD reason, LPVOID reserved)
         Debugger::RegisterDllLoadHandler(
             [](const wchar_t* pwszDllPath, HMODULE hDll)
             {
-                if (GetProcAddress(hDll, "V2Link") != nullptr)
+                if (Debugger::FindExport(hDll, "V2Link") != nullptr)
                     Patcher::PatchSignatureCheck(hDll);
             }
         );

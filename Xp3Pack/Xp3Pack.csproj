@@ -52,7 +52,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Xp3ArchiveWriter.cs" />
     <Compile Include="Xp3IndexBuilder.cs" />
-    <Compile Include="Xp3IndexExtractor.cs" />
     <Compile Include="ZlibStream.cs" />
   </ItemGroup>
   <ItemGroup>

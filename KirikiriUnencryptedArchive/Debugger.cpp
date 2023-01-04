@@ -89,18 +89,39 @@ void Debugger::RegisterDllLoadHandler(const function<void (const wchar_t*, HMODU
 
     if (OriginalLoadLibraryW == nullptr)
     {
+        OriginalVirtualProtect = VirtualProtect;
         OriginalLoadLibraryA = LoadLibraryA;
         OriginalLoadLibraryW = LoadLibraryW;
         OriginalLoadLibraryExA = LoadLibraryExA;
         OriginalLoadLibraryExW = LoadLibraryExW;
 
         DetourTransactionBegin();
+        DetourAttach((void**)&OriginalVirtualProtect, VirtualProtectHook);
         DetourAttach((void**)&OriginalLoadLibraryA, LoadLibraryAHook);
         DetourAttach((void**)&OriginalLoadLibraryW, LoadLibraryWHook);
         DetourAttach((void**)&OriginalLoadLibraryExA, LoadLibraryExAHook);
         DetourAttach((void**)&OriginalLoadLibraryExW, LoadLibraryExWHook);
         DetourTransactionCommit();
     }
+}
+
+void* Debugger::FindExport(HMODULE hModule, const char* pszName)
+{
+    FindExportContext context{};
+    context.pszName = pszName;
+    DetourEnumerateExports(hModule, &context, CheckModuleExport);
+    return context.pFunction;
+}
+
+BOOL Debugger::CheckModuleExport(PVOID pContext, ULONG nOrdinal, LPCSTR pszName, PVOID pCode)
+{
+    FindExportContext* pFindContext = (FindExportContext*)pContext;
+    if (pszName != nullptr && strcmp(pszName, pFindContext->pszName) == 0)
+    {
+        pFindContext->pFunction = pCode;
+        return false;
+    }
+    return true;
 }
 
 void Debugger::Log(const wchar_t* pMessage, ...)
@@ -284,6 +305,37 @@ void Debugger::ExecuteBreakpointHandler()
     CurrentBreakpointHandler = nullptr;
 
     ApplyMemoryBreakpoints();
+}
+
+BOOL Debugger::VirtualProtectHook(LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, PDWORD lpflOldProtect)
+{
+    if (!OriginalVirtualProtect(lpAddress, dwSize, flNewProtect, lpflOldProtect))
+        return false;
+
+    if (flNewProtect != PAGE_EXECUTE_READ)
+        return true;
+
+    BYTE* pModule = (BYTE*)lpAddress - 0x1000;
+    MEMORY_BASIC_INFORMATION memInfo;
+    if (VirtualQuery(pModule, &memInfo, sizeof(memInfo)) == 0)
+        return true;
+
+    if (memInfo.AllocationBase != pModule ||
+        memInfo.RegionSize != 0x1000 ||
+        memInfo.State != MEM_COMMIT ||
+        memInfo.Type != MEM_PRIVATE ||
+        pModule[0] != 'M' ||
+        pModule[1] != 'Z')
+    {
+        return true;
+    }
+
+    for (auto handler : DllLoadHandlers)
+    {
+        handler(nullptr, (HMODULE)pModule);
+    }
+
+    return true;
 }
 
 HMODULE Debugger::LoadLibraryAHook(LPCSTR lpLibFileName)
