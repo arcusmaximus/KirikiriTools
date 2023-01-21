@@ -77,14 +77,14 @@ namespace Arc.Ddsi.Xp3Pack
             using (BinaryWriter xp3Writer = new BinaryWriter(xp3Stream))
             {
                 xp3Writer.Write(HeaderMagic);
-				xp3Writer.Write(0L);        // Index offset
-				// https://github.com/morkt/GARbro/blob/ea096c52ef71065d0d46bd14f601a99b63b99873/ArcFormats/KiriKiri/ArcXP3.cs#L435-L441
-				// This is for xp3 archive V2
+		xp3Writer.Write(0L);        // Index offset
+		// https://github.com/morkt/GARbro/blob/ea096c52ef71065d0d46bd14f601a99b63b99873/ArcFormats/KiriKiri/ArcXP3.cs#L435-L441
+		// This is for xp3 archive V2
                 // xp3Writer.Write((long)0x17);
-				// xp3Writer.Write((int)1);
-				// xp3Writer.Write((byte)0x80);
-				// xp3Writer.Write((long)0);
-				xp3Writer.Write(ProtectionWarningPng);
+		// xp3Writer.Write((int)1);
+		// xp3Writer.Write((byte)0x80);
+		// xp3Writer.Write((long)0);
+		xp3Writer.Write(ProtectionWarningPng);
 
                 Xp3IndexBuilder index = new Xp3IndexBuilder();
 
