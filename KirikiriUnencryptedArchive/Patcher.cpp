@@ -2,6 +2,17 @@
 
 using namespace std;
 
+bool Patcher::PatchSignatureCheck(HMODULE hModule)
+{
+    void** pVerifierVTable = CompilerHelper::FindVTable(hModule, CompilerType::Msvc, "KrkrSign::VerifierImpl");
+    if (pVerifierVTable == nullptr)
+        return false;
+
+    Debugger::Log(L"Patching KrkrSign::VerifierImpl");
+    MemoryUtil::WritePointer(pVerifierVTable + 4, CustomGetSignatureVerificationResult);
+    return true;
+}
+
 void Patcher::PatchXP3StreamCreation()
 {
     void** pXP3ArchiveVTable = CompilerHelper::FindVTable("tTVPXP3Archive");
@@ -27,16 +38,6 @@ void Patcher::PatchStorageMediaRegistration()
 {
     Kirikiri::HookScriptExport(L"void ::TVPRegisterStorageMedia(iTVPStorageMedia *)", &OriginalTVPRegisterStorageMedia, CustomTVPRegisterStorageMedia);
     Kirikiri::HookScriptExport(L"void ::TVPUnregisterStorageMedia(iTVPStorageMedia *)", &OriginalTVPUnregisterStorageMedia, CustomTVPUnregisterStorageMedia);
-}
-
-bool Patcher::PatchSignatureCheck(HMODULE hModule)
-{
-    void** pVerifierVTable = CompilerHelper::FindVTable(hModule, CompilerType::Msvc, "KrkrSign::VerifierImpl");
-    if (pVerifierVTable == nullptr)
-        return false;
-
-    MemoryUtil::WritePointer(pVerifierVTable + 4, CustomGetSignatureVerificationResult);
-    return true;
 }
 
 void Patcher::CustomTVPAddAutoPath(const ttstr& url)

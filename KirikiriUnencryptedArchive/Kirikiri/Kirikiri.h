@@ -77,6 +77,8 @@ private:
     static void                         HandleDllLoaded                             (const wchar_t* pwszDllPath, HMODULE hDll);
     static void                         V2LinkHook                                  ();
     static void                         HandleV2Link                                (iTVPFunctionExporter** ppExporter);
+    static FARPROC __stdcall            CustomGetProcAddress                        (HMODULE hModule, LPCSTR lpProcName);
+    static BOOL __stdcall               CustomImageUnload                           (PLOADED_IMAGE LoadedImage);
 
     static void*                        GetTrampoline                               (void* pTarget);
 

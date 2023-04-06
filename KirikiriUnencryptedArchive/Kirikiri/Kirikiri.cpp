@@ -88,6 +88,8 @@ void Kirikiri::HandleV2Link(iTVPFunctionExporter** ppExporter)
     DetourDetach(&OriginalV2Link, V2LinkHook);
     DetourTransactionCommit();
 
+    HMODULE hPlugin = DetourGetContainingModule(OriginalV2Link);
+
     if (ProxyFunctionExporter == nullptr)
     {
         RealFunctionExporter = *ppExporter;
@@ -102,12 +104,62 @@ void Kirikiri::HandleV2Link(iTVPFunctionExporter** ppExporter)
         ResolveScriptExport(L"bool ::TVPIsExistentStorageNoSearchNoNormalize(const ttstr &)", TVPIsExistentStorageNoSearchNoNormalize);
         ResolveScriptExport(L"IStream * ::TVPCreateIStream(const ttstr &,tjs_uint32)", TVPCreateIStream);
         ResolveScriptExport(L"tTJSBinaryStream * ::TVPCreateBinaryStreamAdapter(IStream *)", TVPCreateBinaryStreamAdapter);
-
-        InitializationCallback();
-        InitializationCallback = nullptr;
     }
 
+    if (InitializationCallback != nullptr)
+    {
+        if (ImportHooker::Hook(hPlugin, "ImageUnload", CustomImageUnload))
+        {
+            Debugger::Log(L"Hooked ImageUnload() to wait for plugin to finish verifying the game's code");
+        }
+        else
+        {
+            Debugger::Log(L"Running initialization");
+            InitializationCallback();
+            InitializationCallback = nullptr;
+        }
+    }
+
+    ImportHooker::Hook(hPlugin, "GetProcAddress", CustomGetProcAddress);
+
     *ppExporter = ProxyFunctionExporter;
+}
+
+FARPROC Kirikiri::CustomGetProcAddress(HMODULE hModule, LPCSTR lpProcName)
+{
+    if (strcmp(lpProcName, "GetSystemWow64DirectoryA") == 0)
+    {
+        // Some games have the following buggy check for a proxy kernel32.dll:
+        //
+        //     GetModuleFileName(GetModuleHandle("kernel32")) == GetSystemWow64Directory() + "\\kernel32.dll"
+        //
+        // This of course doesn't work because GetModuleFileName() returns "C:\Windows\System32\kernel32.dll",
+        // not "C:\Windows\SysWOW64\kernel32.dll" like the game expects. The result is that even the
+        // unmodified game thinks it's being hacked and refuses to start.
+        // 
+        // The fix is to act as though GetSystemWow64DirectoryA() doesn't exist, which should make the game
+        // fall back to the correct GetSystemDirectory().
+        return nullptr;
+    }
+
+    return GetProcAddress(hModule, lpProcName);
+}
+
+BOOL Kirikiri::CustomImageUnload(PLOADED_IMAGE LoadedImage)
+{
+    if (InitializationCallback != nullptr)
+    {
+        wstring imageName = Path::GetFileNameWithoutExtension(StringUtil::ToUTF16(LoadedImage->ModuleName));
+        wstring exeName = Path::GetFileNameWithoutExtension(Path::GetModuleFilePath(nullptr));
+        if (imageName == exeName)
+        {
+            Debugger::Log(L"ImageUnload() called - running initialization");
+            InitializationCallback();
+            InitializationCallback = nullptr;
+        }
+    }
+
+    return ImageUnload(LoadedImage);
 }
 
 void* Kirikiri::GetTrampoline(void* pTarget)

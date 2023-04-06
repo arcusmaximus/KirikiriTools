@@ -3,6 +3,7 @@
 #define WIN32_LEAN_AND_MEAN
 
 #include <Windows.h>
+#include <imagehlp.h>
 #include <strsafe.h>
 #include <algorithm>
 #include <cassert>
@@ -35,6 +36,7 @@
 #include "CompilerSpecific/CompilerHelper.h"
 
 #include "Debugger.h"
+#include "ImportHooker.h"
 #include "Kirikiri/Kirikiri.h"
 #include "CustomTVPXP3ArchiveStream.h"
 #include "CxdecHelper.h"
