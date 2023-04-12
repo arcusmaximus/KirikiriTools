@@ -3,9 +3,9 @@
 
 using namespace std;
 
-void Directory::Create(const std::wstring& folderPath)
+void Directory::Create(const wstring& folderPath)
 {
-    CreateDirectory(folderPath.c_str(), nullptr);
+    filesystem::create_directories(folderPath);
 }
 
 vector<wstring> Directory::GetFiles(const wstring& folderPath, const wstring& pattern)
