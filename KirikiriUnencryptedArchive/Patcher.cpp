@@ -90,11 +90,14 @@ void Patcher::CustomTVPRegisterStorageMedia(iTVPStorageMedia* pMedia)
 {
     ttstr mediaName;
     pMedia->GetName(mediaName);
-    Debugger::Log(L"Hooking storage media \"%s\"", mediaName.c_str());
 
-    void** pVtable = *(void***)pMedia;
-    OriginalStorageMediaOpen[pMedia] = (decltype(CustomStorageMediaOpen)*)pVtable[6];
-    MemoryUtil::WritePointer(&pVtable[6], CustomStorageMediaOpen);
+    if (mediaName != ttstr(L"steam")) {
+        Debugger::Log(L"Hooking storage media \"%s\"", mediaName.c_str());
+
+        void** pVtable = *(void***)pMedia;
+        OriginalStorageMediaOpen[pMedia] = (decltype(CustomStorageMediaOpen)*)pVtable[6];
+        MemoryUtil::WritePointer(&pVtable[6], CustomStorageMediaOpen);
+    }
 
     OriginalTVPRegisterStorageMedia(pMedia);
 }

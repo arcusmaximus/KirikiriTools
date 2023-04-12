@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <exception>
+#include <filesystem>
 #include <functional>
 #include <map>
 #include <ranges>
